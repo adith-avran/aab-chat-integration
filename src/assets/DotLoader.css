@@ -1,0 +1,30 @@
+.dot-loader {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.dot-loader span {
+  width: 5px;
+  height: 5px;
+  background-color: var(--color-text-status-inactive-gy7337, #656871);
+  border-radius: 50%;
+  animation: dotBounce 1.4s infinite ease-in-out both;
+}
+
+.dot-loader span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.dot-loader span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
