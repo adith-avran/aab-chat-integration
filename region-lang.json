@@ -1,0 +1,1007 @@
+{
+    "global": {
+        "link": "https://global.abb",
+        "language": "English"
+    },
+    "countryData": [
+        {
+            "country": "Austria",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/at",
+                    "lang": "German"
+                }
+            ]
+        },
+        {
+            "country": "Belgium",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/benelux",
+                    "lang": "Dutch"
+                },
+                {
+                    "url": "https://new.abb.com/benelux/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Bulgaria",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/bg",
+                    "lang": "Bulgarian"
+                }
+            ]
+        },
+        {
+            "country": "Croatia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/hr",
+                    "lang": "Croatian"
+                }
+            ]
+        },
+        {
+            "country": "Czech Republic",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/cz",
+                    "lang": "Czech"
+                }
+            ]
+        },
+        {
+            "country": "Denmark",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/dk",
+                    "lang": "Danish"
+                }
+            ]
+        },
+        {
+            "country": "Estonia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ee",
+                    "lang": "Estonian"
+                }
+            ]
+        },
+        {
+            "country": "Finland",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/fi",
+                    "lang": "Finnish"
+                }
+            ]
+        },
+        {
+            "country": "France",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Germany",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/de",
+                    "lang": "German"
+                }
+            ]
+        },
+        {
+            "country": "Greece",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/gr",
+                    "lang": "Greek"
+                }
+            ]
+        },
+        {
+            "country": "Hungary",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/hu",
+                    "lang": "Hungarian"
+                }
+            ]
+        },
+        {
+            "country": "Ireland",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ie",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Italy",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/it",
+                    "lang": "Italian"
+                }
+            ]
+        },
+        {
+            "country": "Latvia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/lv",
+                    "lang": "Latvian"
+                }
+            ]
+        },
+        {
+            "country": "Lithuania",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/lt",
+                    "lang": "Lithuanian"
+                }
+            ]
+        },
+        {
+            "country": "Luxembourg",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/benelux/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Netherlands",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/benelux",
+                    "lang": "Dutch"
+                }
+            ]
+        },
+        {
+            "country": "Norway",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/no",
+                    "lang": "Norwegian"
+                }
+            ]
+        },
+        {
+            "country": "Poland",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/pl",
+                    "lang": "Polish"
+                }
+            ]
+        },
+        {
+            "country": "Portugal",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/pt",
+                    "lang": "Portuguese"
+                }
+            ]
+        },
+        {
+            "country": "Romania",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ro",
+                    "lang": "Romanian"
+                }
+            ]
+        },
+        {
+            "country": "Serbia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/rs",
+                    "lang": "Serbian"
+                }
+            ]
+        },
+        {
+            "country": "Slovakia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/sk",
+                    "lang": "Slovakian"
+                }
+            ]
+        },
+        {
+            "country": "Slovenia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/si",
+                    "lang": "Slovenian"
+                }
+            ]
+        },
+        {
+            "country": "Spain",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/es",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Sweden",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/se",
+                    "lang": "Swedish"
+                }
+            ]
+        },
+        {
+            "country": "Switzerland",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ch/fr",
+                    "lang": "French"
+                },
+                {
+                    "url": "https://new.abb.com/ch",
+                    "lang": "German"
+                },
+                {
+                    "url": "https://new.abb.com/ch/it",
+                    "lang": "Italian"
+                }
+            ]
+        },
+        {
+            "country": "Turkiye",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/tr",
+                    "lang": "Turkish"
+                }
+            ]
+        },
+        {
+            "country": "United Kingdom",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/uk",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Argentina",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Aruba",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Bolivia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Brazil",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/br",
+                    "lang": "Portuguese"
+                }
+            ]
+        },
+        {
+            "country": "Canada",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ca",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/ca/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Chile",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Colombia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Costa Rica",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Dominican Republic",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Ecuador",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "El Salvador",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Guatemala",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Honduras",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Mexico",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/mx/",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Panama",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Paraguay",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Peru",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Puerto Rico",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/central-america-caribbean",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "United States of America",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/us",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Uruguay",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/south-america",
+                    "lang": "Spanish"
+                }
+            ]
+        },
+        {
+            "country": "Algeria",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Angola",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Bahrain",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Botswana",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Cameroon",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "C&ocirc;te d'Ivoire",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Egypt",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Ghana",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Israel",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/il",
+                    "lang": "Hebrew"
+                }
+            ]
+        },
+        {
+            "country": "Jordan",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Kenya",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Kuwait",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Lebanon",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Madagascar",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Mali",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Mauritius",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Morocco",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Namibia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Nigeria",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Oman",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Pakistan",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Palestine",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Qatar",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Saudi Arabia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Senegal",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "South Africa",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Tanzania",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Tunisia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Uganda",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "United Arab Emirates",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/middle-east",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Zambia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Zimbabwe",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/africa",
+                    "lang": "English"
+                },
+                {
+                    "url": "https://new.abb.com/africa/fr",
+                    "lang": "French"
+                }
+            ]
+        },
+        {
+            "country": "Australia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/au",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Bangladesh",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/indian-subcontinent",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "China",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/cn",
+                    "lang": "Chinese"
+                },
+                {
+                    "url": "https://new.abb.com/cn/en",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "India",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/indian-subcontinent",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Indonesia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/id",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Japan",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/jp",
+                    "lang": "Japanese"
+                }
+            ]
+        },
+        {
+            "country": "Kazakhstan",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/kz",
+                    "lang": "Russian"
+                }
+            ]
+        },
+        {
+            "country": "Malaysia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/my",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Mongolia",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/mn",
+                    "lang": "Mongolian"
+                },
+                {
+                    "url": "https://new.abb.com/mn/en",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "New Zealand",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/nz",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Philippines",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/ph",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Singapore",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/sg",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "South Korea",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/kr",
+                    "lang": "Korean"
+                }
+            ]
+        },
+        {
+            "country": "Sri Lanka",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/indian-subcontinent",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Taiwan (Chinese Taipei)",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/tw",
+                    "lang": "Chinese - Traditional"
+                }
+            ]
+        },
+        {
+            "country": "Thailand",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/th",
+                    "lang": "English"
+                }
+            ]
+        },
+        {
+            "country": "Vietnam",
+            "languages": [
+                {
+                    "url": "https://new.abb.com/vn",
+                    "lang": "English"
+                }
+            ]
+        }
+    ]
+}
