@@ -13,40 +13,96 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 
 import { CONVERSATION_CONSTANTS } from "./constants";
 
-type Message = {
-  id: string;
-  timestamp: number;
-  author: "user" | "agent";
-  content: string;
-  loading?: boolean;
-  sentMessage?: boolean;
+type StreamMessage = {
+  EVENT: string;
+  DATA: {
+    conversationId: string;
+    messageId: string;
+    content: object;
+    entryType: string;
+    sender: string;
+    actorType: string;
+    transcriptedTimestamp: string;
+    messageReason: string;
+  };
 };
+
+function timestampToDateString(timestamp) {
+  const d = new Date(timestamp);
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const offsetMinutes = -d.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const hours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
+  const minutes = pad(Math.abs(offsetMinutes) % 60);
+
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(
+    d.getSeconds(),
+  )} GMT${sign}${hours}:${minutes}`;
+  return time;
+}
 
 function SalesForceChat({
   prevMessages,
 }: {
   prevMessages: LLMessage[];
 }): JSX.Element {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [prompt, setPrompt] = useState("");
   const { displayName } = useContext(AppContext);
-  const [jwtToken, setJwtToken] = useState<string>(null);
-  const [conversationStatus, setConversationStatus] = useState<string>(
-    CONVERSATION_CONSTANTS.ConversationStatus.NOT_STARTED_CONVERSATION
+  const [convoId, setConvoId] = useState(
+    localStorage.getItem("SALESFORCE_CONVO_ID"),
   );
-
-  let [failedMessage, setFailedMessage] = useState(undefined);
-
-  let [currentTypingParticipants, setCurrentTypingParticipants] = useState({});
-  let [isAnotherParticipantTyping, setIsAnotherParticipantTyping] =
-    useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [isAgentTyping, setIsAgentTyping] = useState(false);
+  const scrollDiv = useRef(null);
+  const [sessionStatus, setSessionStatus] = useState(null);
+  const [jwtToken, setJwtToken] = useState<string>(null);
+  const [messages, setMessages] = useState<StreamMessage[]>([]);
+  const [conversationStatus, setConversationStatus] = useState<string>(
+    CONVERSATION_CONSTANTS.ConversationStatus.NOT_STARTED_CONVERSATION,
+  );
+  // typing timeout
   const typingTimeoutRef = useRef<number | null>(null);
-
   const isTypingRef = useRef(false);
-  const [convoId, setConvoId] = useState(uuid());
+
+  function parseEventData(data: string) {
+    const jsonData = JSON.parse(data);
+    const entryPayload = JSON.parse(jsonData.conversationEntry.entryPayload);
+    console.log(jsonData, entryPayload);
+    const firstEntry = entryPayload.entries?.[0] ?? {};
+
+    return {
+      conversationId: jsonData.conversationId,
+      messageId: jsonData.conversationEntry.identifier,
+      content: entryPayload.abstractMessage || entryPayload,
+
+      messageType:
+        entryPayload.abstractMessage?.messageType ||
+        entryPayload.routingType ||
+        firstEntry.operation,
+
+      entryType: entryPayload.entryType,
+
+      sender: jsonData.conversationEntry.sender,
+
+      actorName:
+        jsonData.conversationEntry.senderDisplayName ||
+        firstEntry.displayName ||
+        firstEntry.participant?.role ||
+        jsonData.conversationEntry.sender.role,
+
+      actorType: jsonData.conversationEntry.sender.role,
+
+      transcriptedTimestamp: jsonData.conversationEntry.transcriptedTimestamp,
+
+      messageReason: entryPayload.messageReason,
+    };
+  }
 
   const sendTypingEvent = async (
-    type: "TypingStartedIndicator" | "TypingStoppedIndicator"
+    type:
+      | CONVERSATION_CONSTANTS.EntryTypes.TYPING_STARTED_INDICATOR
+      | CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR,
   ) => {
     await fetch(
       `${
@@ -62,7 +118,7 @@ function SalesForceChat({
           entryType: type,
           id: uuid(),
         }),
-      }
+      },
     );
   };
 
@@ -72,7 +128,9 @@ function SalesForceChat({
 
     if (val && !isTypingRef.current) {
       isTypingRef.current = true;
-      sendTypingEvent("TypingStartedIndicator");
+      sendTypingEvent(
+        CONVERSATION_CONSTANTS.EntryTypes.TYPING_STARTED_INDICATOR,
+      );
     }
 
     if (typingTimeoutRef.current) {
@@ -82,36 +140,65 @@ function SalesForceChat({
     typingTimeoutRef.current = window.setTimeout(() => {
       if (isTypingRef.current) {
         isTypingRef.current = false;
-        sendTypingEvent("TypingStoppedIndicator");
+        sendTypingEvent(
+          CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR,
+        );
       }
     }, 800);
   };
 
   const generateJWT = () => {
-    fetch(
-      `${
-        import.meta.env.VITE_SALESFORCE_URL
-      }/iamessage/api/v2/authorization/unauthenticated/access-token`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          orgId: import.meta.env.VITE_SALESFORCE_ORG_ID,
-          esDeveloperName: import.meta.env.VITE_SALESFORCE_DEV_NAME,
-          capabilitiesVersion: "1",
-          platform: "Web",
-        }),
-      }
-    )
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        setJwtToken(data.accessToken);
-      })
-      .catch((e) => {
-        // error in e.message
-      });
+    const fromLocalStorage = localStorage.getItem("SALESFORCE_JWT_TOKEN");
+    if (!fromLocalStorage) {
+      fetch(
+        `${
+          import.meta.env.VITE_SALESFORCE_URL
+        }/iamessage/api/v2/authorization/unauthenticated/access-token`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            orgId: import.meta.env.VITE_SALESFORCE_ORG_ID,
+            esDeveloperName: import.meta.env.VITE_SALESFORCE_DEV_NAME,
+            capabilitiesVersion: "1",
+            platform: "Web",
+          }),
+        },
+      )
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          setJwtToken(data.accessToken);
+          localStorage.setItem("SALESFORCE_JWT_TOKEN", data.accessToken);
+        })
+        .catch((e) => {
+          // error in e.message
+        });
+    } else {
+      fetch(
+        `${
+          import.meta.env.VITE_SALESFORCE_URL
+        }/iamessage/api/v2/authorization/continuation-access-token`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: "Bearer " + fromLocalStorage,
+          },
+        },
+      )
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          setJwtToken(data.accessToken);
+          localStorage.setItem("SALESFORCE_JWT_TOKEN", data.accessToken);
+        })
+        .catch((e) => {
+          // error in e.message
+        });
+    }
   };
 
   useEffect(() => {
@@ -119,35 +206,143 @@ function SalesForceChat({
   }, []);
 
   useEffect(() => {
-    if (!jwtToken) return;
-    const apiPath = `${
-      import.meta.env.VITE_SALESFORCE_URL
-    }/iamessage/api/v2/conversation`;
+    if (!scrollDiv.current) return;
+    scrollDiv.current.scrollIntoView(false);
+  }, [messages]);
 
-    fetch(apiPath, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: "Bearer " + jwtToken,
-      },
-      body: JSON.stringify({
-        esDeveloperName: import.meta.env.VITE_SALESFORCE_DEV_NAME,
-        conversationId: convoId,
-      }),
-    }).then((response) => {
-      if (response.ok) {
-        console.log(
-          `Successfully created a new conversation with conversation-id: ${convoId}`
-        );
-        setConversationStatus(
-          CONVERSATION_CONSTANTS.ConversationStatus.OPENED_CONVERSATION
-        );
-      }
-    });
+  useEffect(() => {
+    if (!jwtToken) return;
+    if (!convoId) {
+      const newConvoId = uuid();
+      const apiPath = `${
+        import.meta.env.VITE_SALESFORCE_URL
+      }/iamessage/api/v2/conversation`;
+
+      fetch(apiPath, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: "Bearer " + jwtToken,
+        },
+        body: JSON.stringify({
+          esDeveloperName: import.meta.env.VITE_SALESFORCE_DEV_NAME,
+          conversationId: newConvoId,
+          routingAttributes:
+            '/**\nDescription\nInformation about the conversation captured from the pre-chat form that the end user completes. The attribute values can come from both visible and hidden fields in the pre-chat form, and the information comes in as string values. \n\nOmni Flow can send pre-chat form data to the messaging session for a more informed rep experience. See Map Pre-Chat Values in Omni-Channel Flow at https://help.salesforce.com/s/articleView?id=service.miaw_map_messaging_2.htm for more information.\n**/\n\nExample:\n\n{  \n  "_firstName": "jacob",\n  "_lastName": "jacobs",\n  "_email": "jjacobs@acme.com"\n}\n',
+        }),
+      }).then((response) => {
+        if (response.ok) {
+          console.log(
+            `Successfully created a new conversation with conversation-id: ${newConvoId}`,
+          );
+          setConversationStatus(
+            CONVERSATION_CONSTANTS.ConversationStatus.OPENED_CONVERSATION,
+          );
+          setConvoId(newConvoId);
+          localStorage.setItem("SALESFORCE_CONVO_ID", newConvoId);
+        }
+      });
+    } else {
+      const apiPath = `${
+        import.meta.env.VITE_SALESFORCE_URL
+      }/iamessage/api/v2/conversation/${convoId}/entries?limit=200&direction=FromStart&entryTypeFilter=${[
+        "CloseConversation",
+        "ParticipantChanged",
+        "Message",
+        "RoutingResult",
+        "RoutingWorkResult",
+        "SessionStatusChanged",
+      ].join(",")}`;
+
+      fetch(apiPath, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: "Bearer " + jwtToken,
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            setConversationStatus(
+              CONVERSATION_CONSTANTS.ConversationStatus.OPENED_CONVERSATION,
+            );
+            return response.json();
+          } else {
+            localStorage.removeItem("SALESFORCE_CONVO_ID");
+            // localStorage.removeItem("SALESFORCE_JWT_TOKEN")
+            throw Error;
+          }
+        })
+
+        .then((data) => {
+          setMessages((prev) => [
+            ...data.conversationEntries
+              .map((i) => {
+                const eventData = parseEventData(
+                  JSON.stringify({
+                    conversationEntry: {
+                      ...i,
+                      entryPayload: JSON.stringify(i.entryPayload),
+                    },
+                  }),
+                );
+                if (
+                  i.entryType ==
+                  CONVERSATION_CONSTANTS.EntryTypes.CONVERSATION_MESSAGE
+                ) {
+                  if (
+                    eventData.messageType ===
+                      CONVERSATION_CONSTANTS.MessageTypes
+                        .STATIC_CONTENT_MESSAGE &&
+                    eventData.content.staticContent?.formatType ===
+                      CONVERSATION_CONSTANTS.FormatTypes.TEXT
+                  ) {
+                    console.log("adding to list");
+
+                    return {
+                      EVENT:
+                        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+                      DATA: eventData,
+                    };
+                  }
+                }
+                if (
+                  i.entryType ==
+                  CONVERSATION_CONSTANTS.EntryTypes.PARTICIPANT_CHANGED
+                ) {
+                  return {
+                    EVENT:
+                      CONVERSATION_CONSTANTS.EventTypes
+                        .CONVERSATION_PARTICIPANT_CHANGED,
+                    DATA: eventData,
+                  };
+                }
+                if (
+                  i.entryType ==
+                  CONVERSATION_CONSTANTS.EntryTypes.SESSION_STATE_CHANGED
+                ) {
+                  setSessionStatus(eventData.content.sessionStatus);
+                  return {
+                    EVENT:
+                      CONVERSATION_CONSTANTS.EventTypes
+                        .CONVERSATION_SESSION_STATUS_CHANGED,
+                    DATA: eventData,
+                  };
+                }
+              })
+              .filter((v) => v !== undefined),
+            ...prev,
+          ]);
+        })
+        .catch((e) => {
+          // error in e.message
+        });
+    }
     subscribeToTunnel();
   }, [jwtToken]);
 
   const sendMessage = async () => {
+    //orgfarm-904aba744f-dev-ed.develop.my.salesforce-scrt.com/iamessage/api/v2/conversation/fce0fd6a-1413-44c3-aa84-aaf5d2619ad5/entries?limit=50&entryTypeFilter=Message,ParticipantChanged,RoutingResult
+
     const val = prompt.trim();
     if (!val) return;
     sendTypingEvent("TypingStoppedIndicator");
@@ -178,12 +373,12 @@ function SalesForceChat({
             //   '/**\nDescription\nInformation about the conversation captured from the pre-chat form that the end user completes. The attribute values can come from both visible and hidden fields in the pre-chat form, and the information comes in as string values. \n\nOmni Flow can send pre-chat form data to the messaging session for a more informed rep experience. See Map Pre-Chat Values in Omni-Channel Flow at https://help.salesforce.com/s/articleView?id=sf.miaw_map_messaging_2.htm for more information.\n\nRouting attributes are only sent when the end user starts a new session (isNewMessagingSession is true) and the pre-chat form has been configured to appear with every session. See [Customize Pre-Chat for Enhanced Chat at https://help.salesforce.com/s/articleView?id=sf.miaw_custom_prechat_2.htm for more information. \n\nWhen the end user starts a new session and sends a text message and a file, the routing attributes are sent with whichever conversation entry (the message or file) goes out first. For example, if the end user starts a new session and sends the file before the text message, the routing attributes are sent with the file.\n**/\n\nExample:\n\n{  \n  "_firstName": "jacob",\n  "_lastName": "jacobs",\n  "_email": "jjacobs@acme.com"\n}\n',
             // language: "",
           }),
-        }
+        },
       )
         .then((response) => {
           if (response.ok) {
             console.log(
-              `Successfully sent message to conversation-id: ${convoId}`
+              `Successfully sent message to conversation-id: ${convoId}`,
             );
           }
         })
@@ -209,33 +404,88 @@ function SalesForceChat({
     });
 
     es.onopen = (event) => {
-      // const data = JSON.parse(event.data);
-      es.addEventListener("CONVERSATION_MESSAGE", (e) => {
-        const data = JSON.parse(e.data);
-        console.log(data);
-
-        if (data.conversationEntry.entryType == "Message") {
-          const entryData = JSON.parse(data.conversationEntry.entryPayload);
-          console.log(entryData);
+      es.addEventListener(
+        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
+        (e) => {
+          const eventData = parseEventData(e.data);
 
           if (
-            entryData?.abstractMessage?.staticContent?.formatType === "Text"
+            eventData.actorType !==
+            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
           ) {
-            const msgContent = entryData.abstractMessage.staticContent.text;
-            console.log("MESSAGE");
+            setIsAgentTyping(true);
+          }
+        },
+      );
+      es.addEventListener(
+        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STOPPED_INDICATOR,
+        (e) => {
+          const eventData = parseEventData(e.data);
+
+          if (
+            eventData.actorType !==
+            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+          ) {
+            setIsAgentTyping(false);
+          }
+        },
+      );
+      es.addEventListener(
+        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+        (e) => {
+          const eventData = parseEventData(e.data);
+
+          if (
+            eventData.messageType ===
+              CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
+            eventData.content.staticContent?.formatType ===
+              CONVERSATION_CONSTANTS.FormatTypes.TEXT
+          ) {
+            console.log("adding to list");
+
             setMessages((prev) => [
               ...prev,
               {
-                id: entryData.abstractMessage.id,
-                timestamp: data.conversationEntry.clientTimestamp,
-                author: "user",
-                content: msgContent,
-                sentMessage: true,
+                EVENT: CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+                DATA: eventData,
               },
             ]);
           }
-        }
-      });
+        },
+      );
+      es.addEventListener(
+        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_PARTICIPANT_CHANGED,
+        (e) => {
+          const eventData = parseEventData(e.data);
+          setMessages((prev) => [
+            ...prev,
+            {
+              EVENT:
+                CONVERSATION_CONSTANTS.EventTypes
+                  .CONVERSATION_PARTICIPANT_CHANGED,
+              DATA: eventData,
+            },
+          ]);
+        },
+      );
+      es.addEventListener(
+        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_SESSION_STATUS_CHANGED,
+        (e) => {
+          const eventData = parseEventData(e.data);
+          setSessionStatus(eventData.content.sessionStatus);
+          if (eventData.content.sessionStatus == "Ended") {
+            setMessages((prev) => [
+              ...prev,
+              {
+                EVENT:
+                  CONVERSATION_CONSTANTS.EventTypes
+                    .CONVERSATION_SESSION_STATUS_CHANGED,
+                DATA: eventData,
+              },
+            ]);
+          }
+        },
+      );
       console.log(event);
     };
   };
@@ -244,7 +494,7 @@ function SalesForceChat({
     <>
       <div style={{ height: "100vh" }}>
         <Container
-          header={<Header variant="h3">Chat</Header>}
+          // header={<Header variant="h3">Chat</Header>}
           style={{ root: { borderWidth: "0px" } }}
           fitHeight
           disableContentPaddings
@@ -256,63 +506,158 @@ function SalesForceChat({
               placeholder="Type a message"
               actionButtonIconName="send"
               ariaLabel="Chat input"
+              disabled={sessionStatus === "Ended"}
             />
           }
         >
           <Box padding="m">
             <SpaceBetween size="s">
-              {prevMessages.map((message) => (
-                <SpaceBetween
-                  key={message.id}
-                  size="xs"
-                  className="chat-message"
-                  alignItems={message.author === "assistant" ? "start" : "end"}
-                >
-                  <ChatBubble
-                    avatar={
-                      <ChatBubbleAvatar
-                        loading={message.loading}
-                        author={
-                          message.author === "assistant"
+              <div ref={scrollDiv}>
+                {prevMessages.map((message) => (
+                  <SpaceBetween
+                    key={message.id}
+                    size="xs"
+                    className="chat-message"
+                    alignItems={
+                      message.author === "assistant" ? "start" : "end"
+                    }
+                  >
+                    <ChatBubble
+                      avatar={
+                        <ChatBubbleAvatar
+                          loading={message.loading}
+                          author={
+                            message.author === "assistant"
+                              ? "assistant"
+                              : displayName || ""
+                          }
+                        />
+                      }
+                      ariaLabel={`message-${message.author}`}
+                      type={
+                        message.author === "assistant" ? "incoming" : "outgoing"
+                      }
+                    >
+                      {message.loading ? <LoadingMessage /> : message.content}
+                    </ChatBubble>
+                  </SpaceBetween>
+                ))}
+                {[
+                  ...messages,
+                  ...(isAgentTyping
+                    ? [
+                        {
+                          EVENT: "CUSTOM-IS-TYPING",
+                          id: "loading-indicator",
+                        },
+                      ]
+                    : []),
+                ].map((msg) =>
+                  msg.EVENT ===
+                  CONVERSATION_CONSTANTS.EventTypes
+                    .CONVERSATION_PARTICIPANT_CHANGED ? (
+                    <SpaceBetween
+                      key={msg.DATA.messageId}
+                      size="xs"
+                      alignItems={"center"}
+                    >
+                      <Box color="text-body-secondary">
+                        {msg.DATA.content.entries.map((i) => (
+                          <p>
+                            <small>
+                              {i.displayName} [{i.participant.role}] has{" "}
+                              {i.operation == "add" ? "joined" : "left"} the
+                              chat •{" "}
+                              {timestampToDateString(
+                                msg.DATA.transcriptedTimestamp,
+                              )}
+                            </small>
+                          </p>
+                        ))}
+                      </Box>
+                    </SpaceBetween>
+                  ) : msg.EVENT ===
+                    CONVERSATION_CONSTANTS.EventTypes
+                      .CONVERSATION_SESSION_STATUS_CHANGED ? (
+                    msg.DATA.content.sessionStatus === "Ended" ? (
+                      <SpaceBetween
+                        key={msg.DATA.messageId}
+                        size="xs"
+                        alignItems={"center"}
+                      >
+                        <Box color="text-body-secondary">
+                          <p>
+                            <small>
+                              {msg.DATA.content.sessionEndedByRole} has ended
+                              the chat •{" "}
+                              {timestampToDateString(
+                                msg.DATA.transcriptedTimestamp,
+                              )}
+                            </small>
+                          </p>
+                        </Box>
+                      </SpaceBetween>
+                    ) : (
+                      ""
+                    )
+                  ) : (
+                    <SpaceBetween
+                      key={
+                        msg.EVENT === "CUSTOM-IS-TYPING"
+                          ? msg.id
+                          : msg.DATA.messageId
+                      }
+                      size="xs"
+                      className="chat-message"
+                      alignItems={
+                        msg.EVENT === "CUSTOM-IS-TYPING" ||
+                        msg.DATA.actorType !==
+                          CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+                          ? "start"
+                          : "end"
+                      }
+                    >
+                      <ChatBubble
+                        avatar={
+                          <ChatBubbleAvatar
+                            author={
+                              msg.EVENT === "CUSTOM-IS-TYPING"
+                                ? CONVERSATION_CONSTANTS.ParticipantRoles.AGENT
+                                : msg.DATA.actorType
+                              // message.author === CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+                              //   ? displayName || ""
+                              //   : "agent"
+                            }
+                            loading={msg.EVENT === "CUSTOM-IS-TYPING"}
+                          />
+                        }
+                        ariaLabel={`message-${
+                          msg.EVENT === "CUSTOM-IS-TYPING" ||
+                          msg.DATA.actorType !==
+                            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
                             ? "assistant"
-                            : displayName || ""
+                            : "user"
+                        }`}
+                        type={
+                          msg.EVENT === "CUSTOM-IS-TYPING" ||
+                          msg.DATA.actorType !==
+                            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+                            ? "outgoing"
+                            : "incoming"
                         }
-                      />
-                    }
-                    ariaLabel={`message-${message.author}`}
-                    type={
-                      message.author === "assistant" ? "incoming" : "outgoing"
-                    }
-                  >
-                    {message.loading ? <LoadingMessage /> : message.content}
-                  </ChatBubble>
-                </SpaceBetween>
-              ))}
-              {messages.map((message) => (
-                <SpaceBetween
-                  key={message.id}
-                  size="xs"
-                  className="chat-message"
-                  alignItems={message.author === "agent" ? "start" : "end"}
-                >
-                  <ChatBubble
-                    avatar={
-                      <ChatBubbleAvatar
-                        loading={message.loading}
-                        author={
-                          message.author === "agent"
-                            ? "agent"
-                            : displayName || ""
-                        }
-                      />
-                    }
-                    ariaLabel={`message-${message.author}`}
-                    type={message.author === "agent" ? "incoming" : "outgoing"}
-                  >
-                    {message.loading ? <LoadingMessage /> : message.content}
-                  </ChatBubble>
-                </SpaceBetween>
-              ))}
+                      >
+                        {msg.EVENT === "CUSTOM-IS-TYPING" ? (
+                          <LoadingMessage />
+                        ) : (
+                          // JSON.stringify(msg)
+                          msg.DATA.content.staticContent.text
+                          // ''
+                        )}
+                      </ChatBubble>
+                    </SpaceBetween>
+                  ),
+                )}
+              </div>
             </SpaceBetween>
           </Box>
         </Container>
@@ -330,7 +675,7 @@ function ChatBubbleAvatar({
   loading?: boolean;
   author: string;
 }) {
-  if (author === "assistant") {
+  if (author === "assistant" || loading) {
     return (
       <Avatar
         color="gen-ai"
@@ -355,7 +700,6 @@ function ChatBubbleAvatar({
 const LoadingMessage = () => (
   <Box color="text-status-inactive">
     <div style={{ display: "flex", gap: 7 }}>
-      Generating a response
       <DotLoader />
     </div>
   </Box>

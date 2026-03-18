@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useRef, useContext, useEffect } from "react";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Header from "@cloudscape-design/components/header";
@@ -23,6 +23,8 @@ export default function ChatInterface(): JSX.Element {
   const [messages, setMessages] = useState<LLMessage[]>([]);
   const [prompt, setPrompt] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const scrollDiv = useRef(null);
+
   const { displayName } = useContext(AppContext);
   const [transferToSalesForce, setTransferToSalesForce] =
     useState<boolean>(false);
@@ -75,8 +77,8 @@ export default function ChatInterface(): JSX.Element {
                   data.data?.message ??
                   "Something went wrong. Please try again.",
               }
-            : msg
-        )
+            : msg,
+        ),
       );
 
       if (data.data?.intent === "RouteToAgent") {
@@ -98,21 +100,27 @@ export default function ChatInterface(): JSX.Element {
             return { ...msg, sentMessage: false };
           }
           return msg;
-        })
+        }),
       );
     } finally {
       setIsProcessing(false);
     }
   };
 
+  useEffect(() => {
+    if (!scrollDiv.current) return;
+    scrollDiv.current.scrollIntoView(false);
+  }, [messages]);
+
   return transferToSalesForce ? (
     <SalesForceChat prevMessages={messages} />
   ) : (
     <div style={{ height: "100vh" }}>
       <Container
-        header={<Header variant="h3">Chat</Header>}
+        // header={<Header variant="h3">Chat</Header>}
         style={{ root: { borderWidth: "0px" } }}
         fitHeight
+        className="chatInterface_container"
         disableContentPaddings
         footer={
           <PromptInput
@@ -132,7 +140,7 @@ export default function ChatInterface(): JSX.Element {
               <SpaceBetween
                 key={message.id}
                 size="xs"
-                  className="chat-message"
+                className="chat-message"
                 alignItems={message.author === "assistant" ? "start" : "end"}
               >
                 <ChatBubble
