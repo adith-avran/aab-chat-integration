@@ -4,7 +4,9 @@ import { generateClient } from "aws-amplify/data";
 import ChatInterface from "./ChatInterface";
 import "./App.css";
 import { capitalize } from "./assets/functions"
-import ChatShell from "./ChatShell";
+// import ChatShell from "./ChatShell";
+import Chat from "./Chat"
+import SalesForceChat from "./SalesForceChat";
 
 const client = generateClient<Schema>();
 
@@ -20,7 +22,9 @@ function App() {
   return (
     <div className="App">
       <AppContext.Provider value={{ language, email, displayName }}>
-        <ChatInterface />
+        {/* <SalesForceChat prevMessages={[]} /> */}
+        {/* <ChatInterface /> */}
+        <Chat />
         {/* <ChatShell /> */}
       </AppContext.Provider>
     </div>
