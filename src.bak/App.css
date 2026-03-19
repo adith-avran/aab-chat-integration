@@ -1,0 +1,6 @@
+.chat-message [aria-label="message-user"] {
+  flex-direction: row-reverse !important;
+}
+.chatInterface_container {
+  border-radius: 0;
+}

@@ -1,0 +1,12 @@
+.chat-message [aria-label="message-user"] {
+  flex-direction: row-reverse !important;
+}
+.chat-message [aria-label^="message-"]  {
+  max-width: 75vw;
+}
+
+
+.div-header * {
+  text-align: center;
+  width: 100%;
+}
