@@ -8,7 +8,7 @@ function injectChatInterface() {
       <h3 style='line-height: 31px;color: #ff0000; font-weight: 100'>Chat</h3>          
     </div>
 
-    <iframe style="border-width: 0px; width: 100%; height: 550px;"  id="custom-chat-iframe" src="http://localhost:5174"></iframe>
+    <iframe style="border-width: 0px; width: 100%; height: 550px;"  id="custom-chat-iframe" src="http://localhost:5173"></iframe>
 </div>
 `;
   document.querySelector(".container").appendChild(modal);

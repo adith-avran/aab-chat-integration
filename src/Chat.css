@@ -1,12 +1,46 @@
 .chat-message [aria-label="message-user"] {
   flex-direction: row-reverse !important;
 }
-.chat-message [aria-label^="message-"]  {
+.chat-message [aria-label^="message-"] {
   max-width: 75vw;
 }
-
 
 .div-header * {
   text-align: center;
   width: 100%;
+}
+
+.chat_header h3 {
+  margin: 0;
+  /* line-height: 26px; */
+  color: #ff0000;
+}
+div:has(.chat_header) {
+  border-bottom: 1px solid #d9d9db !important;
+}
+.chat_header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat_header img {
+  width: auto;
+  height: 18px;
+  /* line-height: 26px; */
+}
+
+.chat_header button > span > svg {
+  color: #ff0000;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+.message-containers {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }

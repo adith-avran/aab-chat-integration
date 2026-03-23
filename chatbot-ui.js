@@ -15,7 +15,7 @@ const injectedCSS = `
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
-    max-width: 600px;
+    max-width: 30vw;
     height: 54px;
     background: #ffffff;
     border: 1px solid #e0e0e0;
@@ -62,7 +62,7 @@ const injectedCSS = `
     flex-direction: column;
     width: 95%;
     max-width: 900px;
-    height: 85vh;
+    height: 75vh;
     background: #ffffff;
     border-radius: 10px;
     pointer-events: auto;
@@ -89,16 +89,15 @@ const injectedCSS = `
 }
 
 .custom-chat-modal-header {
-    display: flex;
-    justify-content: space-between;
-    margin: 20px;
+    position: relative;
 }
 
-.custom-chat-modal-header  h3 {
-    margin: 0;
-    color: #ff0000;
-    font-weight: 100
+.custom-chat-modal-header > div {
+        position: absolute;
+    top: 10px;
+    right: 20px;
 }
+
 `;
 
 function injectChatInterface() {
@@ -121,22 +120,21 @@ function injectChatInterface() {
 
   const modal = document.createElement("div");
   modal.id = "custom-chat-modal";
+  const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
+  const country = window.CHAT_SESSION_COUNTRY || "US";
+  const iframeUrl = `https://dg3aic71lh9nz.cloudfront.net?lang=${lang}&country=${country}`;
   modal.innerHTML = `
 <div id="custom-chat-modal-content">
-    <div style="border-bottom: 1px solid #f0f0f0;">
-      <div class="custom-chat-modal-header" style="margin-bottom: 15px !important;">
-        <div style="display: flex;align-items: center;gap: 10px;">
-          <img style="width: auto;height: 18px;" src="https://abb.my.site.com/resource/1738743454000/ABBlogoforMessaging" >
-          <h3 style='line-height: 31px;'>Chat</h3>
+    
+    <div class="custom-chat-modal-header" >
+        <div style='line-height: 38px;' id="custom-chat-modal-close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256">
+            <path fill="#ff0000" d="M128,188a11.96187,11.96187,0,0,1-8.48535-3.51465l-80-80a12.0001,12.0001,0,0,1,16.9707-16.9707L128,159.0293l71.51465-71.51465a12.0001,12.0001,0,0,1,16.9707,16.9707l-80,80A11.96187,11.96187,0,0,1,128,188Z"/>
+          </svg>
         </div>
-          <div style='line-height: 38px;' id="custom-chat-modal-close">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256">
-              <path fill="#ff0000" d="M128,188a11.96187,11.96187,0,0,1-8.48535-3.51465l-80-80a12.0001,12.0001,0,0,1,16.9707-16.9707L128,159.0293l71.51465-71.51465a12.0001,12.0001,0,0,1,16.9707,16.9707l-80,80A11.96187,11.96187,0,0,1,128,188Z"/>
-            </svg>
-          </div>
-      </div>
     </div>
-    <iframe id="custom-chat-iframe" src="http://localhost:5174"></iframe>
+  
+    <iframe id="custom-chat-iframe" src="${iframeUrl}"></iframe>
 </div>
 `;
   document.body.appendChild(modal);

@@ -1,5 +1,3 @@
-import React from "react";
-import { Box } from "@cloudscape-design/components";
 import "./DotLoader.css";
 
 export function DotLoader() {

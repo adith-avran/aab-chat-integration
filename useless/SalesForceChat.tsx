@@ -150,35 +150,7 @@ function SalesForceChat({
   const generateJWT = () => {
     const fromLocalStorage = localStorage.getItem("SALESFORCE_JWT_TOKEN");
     if (!fromLocalStorage) {
-      fetch(
-        `${
-          import.meta.env.VITE_SALESFORCE_URL
-        }/iamessage/api/v2/authorization/authenticated/access-token`,
-        // }/iamessage/api/v2/authorization/unauthenticated/access-token`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            orgId: import.meta.env.VITE_SALESFORCE_ORG_ID,
-            esDeveloperName: import.meta.env.VITE_SALESFORCE_DEV_NAME,
-            capabilitiesVersion: "1",
-            platform: "Web",
-            authorizationType: "JWT",
-            customerIdentityToken:
-              "ew0KICAiYWxnIjogIlJTMjU2IiwNCiAgImtpZCI6ICJhbWF6b25LZXkiLA0KICAidHlwIjogIkpXVCINCn0.ew0KICAic3ViIjogImFtYXpvbi1ib3QtdXNlciIsDQogICJpc3MiOiAiQVdTIiwNCiAgImlhdCI6IDE3NzM4MDUyNjYsDQogICJleHAiOiAxNzc0MzIzNjY2DQp9.dHQlLkYK1jIUAaAIgQUy4dt5TdVqWJskB9xCBa6hKe8AlfU0ufeXM-bnykoJqeqIGB9AP0wXhnzQg8_qBbxjZ9zGYzjOE0ozJ1vFcFfj_hJBxfkhax7Pgi5CNxH2TmQPankfZuFvVaS2b5mGiYnSXbmMajNOhHJW0X8tOIvkB_r1vPCFMkneur0yS5l9Kknixpyr1oWFy9Ge5bYPxzPbQj64wYk7JNtVZU-hcDzN4SmtkZ9GX0TaFWN-gbEqTzvhkHLNjnZFFSjnbpYhayQTQZbKAH7J_aL4DdQNALVAece_YB2n5zRq9JY3VTQgnsQkogdulDTLAGhHrMD5WESUfg",
-          }),
-        }
-      )
-        .then((response) => {
-          return response.json();
-        })
-        .then((data) => {
-          setJwtToken(data.accessToken);
-          localStorage.setItem("SALESFORCE_JWT_TOKEN", data.accessToken);
-        })
-        .catch((e) => {
-          // error in e.message
-        });
+      // 
     } else {
       fetch(
         `${

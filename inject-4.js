@@ -57,8 +57,7 @@ function injectChatInterface() {
   document.body.appendChild(launcher);
 
   launcher.addEventListener("click", () => {
-    const url =
-      "http://localhost:5174";
+    const url = "http://localhost:5173";
     window.open(
       url,
       "LiveChat",

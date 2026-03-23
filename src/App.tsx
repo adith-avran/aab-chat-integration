@@ -1,14 +1,10 @@
-import { useEffect, useState, createContext } from "react";
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
-import ChatInterface from "./ChatInterface";
+import { createContext } from "react";
+// import ChatInterface from "./ChatInterface";
 import "./App.css";
-import { capitalize } from "./assets/functions"
+// import { capitalize } from "./assets/functions"
 // import ChatShell from "./ChatShell";
 import Chat from "./Chat"
-import SalesForceChat from "./SalesForceChat";
-
-const client = generateClient<Schema>();
+// import SalesForceChat from "./SalesForceChat";
 
 export const AppContext = createContext<any>({});
 
@@ -22,9 +18,9 @@ function App() {
   return (
     <div className="App">
       <AppContext.Provider value={{ language, email, displayName }}>
-        <SalesForceChat prevMessages={[]} />
+        {/* <SalesForceChat prevMessages={[]} /> */}
         {/* <ChatInterface /> */}
-        {/* <Chat /> */}
+        <Chat />
         {/* <ChatShell /> */}
       </AppContext.Provider>
     </div>
