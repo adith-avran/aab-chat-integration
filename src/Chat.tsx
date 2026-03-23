@@ -367,7 +367,7 @@ function Chat() {
           return {
             id: uuid(),
             timestamp: eventData.transcriptedTimestamp,
-            author: "system",
+            author: "System",
             content: eventData.content.entries.map(
               (j: any) =>
                 `${j.displayName} has ${
@@ -396,7 +396,7 @@ function Chat() {
             return {
               id: uuid(),
               timestamp: eventData.transcriptedTimestamp,
-              author: "system",
+              author: "System",
               content: ["This session has ended"],
               sentMessage: true,
             };
@@ -767,7 +767,7 @@ function Chat() {
                     }}
                   />
                   <img src="https://abb.my.site.com/resource/1738743454000/ABBlogoforMessaging" />
-                  <h3>Chat</h3>
+                  <h2>Chat</h2>
                 </div>
               </div>
             }
@@ -888,6 +888,10 @@ function Chat() {
   );
 }
 
+function capitalizeFirstLetter(val:string) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
 function ChatBubbleAvatar({
   loading,
   author,
@@ -917,8 +921,8 @@ function ChatBubbleAvatar({
   return (
     <Avatar
       initials={initials}
-      tooltipText={author || "User"}
-      ariaLabel={author || "User"}
+      tooltipText={capitalizeFirstLetter(author || "User")}
+      ariaLabel={capitalizeFirstLetter(author || "User")}
     />
   );
 }
