@@ -8,16 +8,13 @@ import {
 } from "@cloudscape-design/components";
 import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
-import Markdown from "react-markdown";
+
 import { DotLoader } from "./assets/DotLoader";
 import { ChatBubble, Avatar } from "@cloudscape-design/chat-components";
 import "./Chat.css";
 import { useRef } from "react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { CONVERSATION_CONSTANTS } from "./constants";
-import { InputProps } from "@cloudscape-design/components";
-import { NonCancelableCustomEvent } from "@cloudscape-design/components/interfaces";
-import langTextData from "./textLang.json";
 
 export type LLMessage = {
   id: string;
@@ -80,67 +77,16 @@ function parseEventData(data: string) {
 
 function Chat() {
   const queryParams = new URLSearchParams(window.location.search);
-  const language_CODE = queryParams.get("lang") ?? "en_US";
+  const language_CODE = queryParams.get("lang");
   const country_CODE = queryParams.get("country");
   const [promptVal, setPromptVal] = useState<string>("");
   const scrollDiv = useRef<null | HTMLDivElement>(null);
   // const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<LLMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [isAgentTyping, setIsAgentTyping] = useState(false);
+  // const [isAgentTyping, setIsAgentTyping] = useState(false);
   const [chatState, setChatState] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
-
-  const langFormatText =
-    langTextData[language_CODE as keyof typeof langTextData] ??
-    langTextData["en_US"];
-
-  const typingTimeoutRef = useRef<number | null>(null);
-  const isTypingRef = useRef(false);
-
-  const sendTypingEvent = async (
-    type:
-      | typeof CONVERSATION_CONSTANTS.EntryTypes.TYPING_STARTED_INDICATOR
-      | typeof CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR,
-  ) => {
-    if (chatState !== "SFChat") return;
-    await fetch(import.meta.env.VITE_SF_API, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        intent: "TypingStatus",
-        typingType: type,
-      }),
-    });
-  };
-
-  const handleInputChange = ({
-    detail,
-  }: NonCancelableCustomEvent<InputProps.ChangeDetail>) => {
-    const val = detail.value;
-    setPromptVal(val);
-
-    if (val && !isTypingRef.current) {
-      isTypingRef.current = true;
-      sendTypingEvent(
-        CONVERSATION_CONSTANTS.EntryTypes.TYPING_STARTED_INDICATOR,
-      );
-    }
-
-    if (typingTimeoutRef.current) {
-      window.clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = window.setTimeout(() => {
-      if (isTypingRef.current) {
-        isTypingRef.current = false;
-        sendTypingEvent(
-          CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR,
-        );
-      }
-    }, 1000);
-  };
 
   function handleNewChat() {
     esRef.current?.close(); // ✅ Add this
@@ -151,12 +97,11 @@ function Chat() {
   }
 
   async function onMessage(e: any) {
-    if (loading || [null, "Ended"].includes(chatState)) return;
     e?.preventDefault();
     const trimmed = promptVal.trim();
     if (!trimmed || loading) return;
+
     setPromptVal("");
-    sendTypingEvent(CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR);
     if (chatState === "SFChat") {
       const res = await fetch(import.meta.env.VITE_SF_API, {
         method: "POST",
@@ -212,8 +157,7 @@ function Chat() {
                   ...msg,
                   loading: false,
                   content:
-                    data.response ??
-                    langFormatText.llmResponsePharsingErrorMessage,
+                    data.response ?? "Something went wrong. Please try again.",
                 }
               : msg,
           ),
@@ -291,7 +235,7 @@ function Chat() {
               return {
                 ...msg,
                 loading: false,
-                content: langFormatText.llmSendMessageError,
+                content: "Message failed to send. Please try again.",
               };
             }
             if (msg.id === userMessageId) {
@@ -325,7 +269,7 @@ function Chat() {
         el = el.parentElement;
       }
     });
-  }, [messages, isAgentTyping]);
+  }, [messages]);
 
   function parse_fetched_ai_chats(data: any) {
     let msgs__: LLMessage[] = [];
@@ -453,8 +397,27 @@ function Chat() {
               id: uuid(),
               timestamp: eventData.transcriptedTimestamp,
               author: "System",
-              content: [langFormatText.sfSessionEndedMessage],
+              content: ["This session has ended"],
               sentMessage: true,
+            };
+          }
+        }
+        if (i.entryType == CONVERSATION_CONSTANTS.EntryTypes.ROUTING_RESULT) {
+          console.log(eventData);
+
+          if (eventData.content.failureReason) {
+            if (
+              eventData.content.failureReason ===
+              "No Agents are available. Please submit a web inquiry using the web contact form."
+            ) {
+              // closeSFSession();
+            }
+            return {
+              id: eventData.messageId,
+              timestamp: eventData.transcriptedTimestamp,
+              author: eventData.actorType,
+              content: [eventData.content.failureReason],
+              name: eventData.actorName,
             };
           }
         }
@@ -482,8 +445,6 @@ function Chat() {
   }
 
   const subscribeToTunnel = (data: any) => {
-    console.log("subscribeToTunnel called", new Date().toISOString());
-
     if (esRef.current) {
       esRef.current.close();
       esRef.current = null;
@@ -496,8 +457,6 @@ function Chat() {
     esRef.current = es;
 
     es.onopen = (event: any) => {
-      console.log('opened socket');
-      
       setChatState("SFChat");
       // es.addEventListener(
       //   CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
@@ -525,32 +484,6 @@ function Chat() {
       //     }
       //   },
       // );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
-        (e) => {
-          const eventData = parseEventData(e.data);
-
-          if (
-            eventData.actorType !==
-            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
-          ) {
-            setIsAgentTyping(true);
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STOPPED_INDICATOR,
-        (e) => {
-          const eventData = parseEventData(e.data);
-
-          if (
-            eventData.actorType !==
-            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
-          ) {
-            setIsAgentTyping(false);
-          }
-        },
-      );
       es.addEventListener(
         CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
         (e: any) => {
@@ -672,7 +605,7 @@ function Chat() {
                 id: uuid(),
                 timestamp: eventData.transcriptedTimestamp,
                 author: "System",
-                content: [langFormatText.sfSessionEndedMessage],
+                content: ["This session has ended"],
                 sentMessage: true,
               },
             ]);
@@ -694,11 +627,9 @@ function Chat() {
     };
 
     es.onerror = async () => {
-      console.log("error of sse");
-
       es.close();
       esRef.current = null;
-      await refreshSFToken();
+      await refreshSFToken(); // 👈 get new token and reconnect
     };
   };
 
@@ -710,10 +641,6 @@ function Chat() {
       body: JSON.stringify({ intent: "RefreshSFToken" }),
     });
     const data = await res.json();
-    if (data.expired) {
-      setChatState("Ended");
-      return;
-    }
     subscribeToTunnel(data);
   };
 
@@ -728,9 +655,6 @@ function Chat() {
     })
       .then((response) => response.json())
       .then((data) => {
-        // if (data.expired) {
-        //   return;
-        // }
         if (data.state === "NOT_CONNECTED") {
           setChatState("AIChat"); // 👈 just start fresh
           return;
@@ -819,7 +743,7 @@ function Chat() {
                     items={[
                       {
                         id: "end_chat",
-                        text: langFormatText.uiEndChatBtnText,
+                        text: "End Chat",
                         iconName: "close",
                         disabled:
                           !["AIChat", "SFChat"].includes(chatState ?? "") ||
@@ -827,7 +751,7 @@ function Chat() {
                       },
                       {
                         id: "download_transcript",
-                        text: langFormatText.uiDownloadTranscriptBtnText,
+                        text: "Download Transcript",
                         iconName: "download",
                         disabled: true,
                       },
@@ -843,7 +767,7 @@ function Chat() {
                     }}
                   />
                   <img src="https://abb.my.site.com/resource/1738743454000/ABBlogoforMessaging" />
-                  <h2>{langFormatText.uiChatTitle}</h2>
+                  <h2>Chat</h2>
                 </div>
               </div>
             }
@@ -851,21 +775,17 @@ function Chat() {
               <SpaceBetween size="s">
                 {chatState === "Ended" ? (
                   <div style={{ textAlign: "center" }}>
-                    <Button onClick={handleNewChat}>
-                      {langFormatText.uiStartNewChatBnText}
-                    </Button>
+                    <Button onClick={handleNewChat}>Start New Chat</Button>
                   </div>
                 ) : (
                   <PromptInput
                     value={promptVal}
-                    onChange={handleInputChange}
+                    onChange={({ detail }) => setPromptVal(detail.value)}
                     onAction={onMessage}
-                    placeholder={langFormatText.uiTypeMessageInputText}
+                    placeholder="Type a message"
                     actionButtonIconName="send"
-                    ariaLabel={langFormatText.uiTypeMessageInputText}
-                    disableActionButton={
-                      loading || [null, "Ended"].includes(chatState)
-                    }
+                    ariaLabel="Chat input"
+                    disabled={loading || [null, "Ended"].includes(chatState)}
                     maxRows={8}
                     minRows={3}
                   />
@@ -885,30 +805,6 @@ function Chat() {
                         gap: 12,
                       }}
                     >
-                      {/* <SpaceBetween
-                        size="xs"
-                        className="chat-message"
-                        // alignItems={
-                        //   message.author === "assistant" ||
-                        //   message.author === "agent"
-                        //     ? "start"
-                        //     : message.author === "user"
-                        //     ? "end"
-                        //     : "center"
-                        // }
-                      >
-                        <SpaceBetween size="xs" alignItems={"center"}>
-                          <Box color="text-body-secondary">
-                            
-                                  <p>
-                                    <small>
-                                      This is a disclaimer
-                                    </small>
-                                  </p>
-                          </Box>
-                        </SpaceBetween>
-                      </SpaceBetween> */}
-
                       {messages.map((message) => (
                         <SpaceBetween
                           key={message.id}
@@ -948,16 +844,7 @@ function Chat() {
                                 avatar={
                                   <ChatBubbleAvatar
                                     loading={message.loading ? true : false}
-                                    author={
-                                      message.name ||
-                                      langFormatText.translateUserTitle[
-                                        message.author
-                                      ]
-                                    }
-                                    role={message.author}
-                                    translateUserTitleRef={
-                                      langFormatText.translateUserTitle
-                                    }
+                                    author={message.name || message.author}
                                   />
                                 }
                                 ariaLabel={`message-${message.author}`}
@@ -969,26 +856,10 @@ function Chat() {
                                 }
                               >
                                 {message.loading ? (
-                                  <LoadingMessage
-                                    loadingMsg={langFormatText.loadingMsgText}
-                                  />
+                                  <LoadingMessage />
                                 ) : (
-                                  <div
-                                    className="markdownContainerDiv"
-                                    style={{
-                                      display: "flex",
-                                      gap: 10,
-                                      flexDirection: "column",
-                                      whiteSpace: "pre-wrap",
-                                    }}
-                                  >
-                                    <Markdown>
-                                      {Array.isArray(message.content)
-                                        ? message.content.join("\n")
-                                        : message.content ?? ""}
-                                    </Markdown>
-                                  </div>
-                                )}
+                                  message.content
+                                )}{" "}
                               </ChatBubble>
                               {!message.loading && (
                                 <Box
@@ -1005,33 +876,6 @@ function Chat() {
                           )}
                         </SpaceBetween>
                       ))}
-
-                      {isAgentTyping ? (
-                        <SpaceBetween
-                          size="xs"
-                          className="chat-message"
-                          alignItems={"start"}
-                        >
-                          <ChatBubble
-                            avatar={
-                              <ChatBubbleAvatar
-                                author={langFormatText.translateUserTitle.agent}
-                                role={"agent"}
-                                loading={true}
-                                translateUserTitleRef={
-                                  langFormatText.translateUserTitle
-                                }
-                              />
-                            }
-                            ariaLabel={`message-agent`}
-                            type={"incoming"}
-                          >
-                            <DotLoader />
-                          </ChatBubble>
-                        </SpaceBetween>
-                      ) : (
-                        ""
-                      )}
                     </div>
                   </SpaceBetween>
                 </div>
@@ -1044,39 +888,30 @@ function Chat() {
   );
 }
 
-function capitalizeFirstLetter(val: string) {
-  return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+function capitalizeFirstLetter(val:string) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
 function ChatBubbleAvatar({
   loading,
   author,
-  role,
-  translateUserTitleRef,
 }: {
   loading: boolean;
   author: string | null;
-  role: string;
-  translateUserTitleRef: {
-    user: string;
-    agent: string;
-    assistant: string;
-    genai: string;
-  };
 }) {
-  if (role === "assistant") {
+  if (author === "assistant") {
     return (
       <Avatar
         color="gen-ai"
         iconName="gen-ai"
         loading={loading}
-        tooltipText={translateUserTitleRef.genai}
-        ariaLabel={translateUserTitleRef.genai}
+        tooltipText="Gen-AI"
+        ariaLabel="Gen-AI"
       />
     );
   }
 
-  const initials = (author ? author : translateUserTitleRef.user)
+  const initials = (author ? author : "User")
     .trim()
     .split(" ")
     .map((i) => i[0])
@@ -1086,8 +921,8 @@ function ChatBubbleAvatar({
   return (
     <Avatar
       initials={initials}
-      tooltipText={capitalizeFirstLetter(author || translateUserTitleRef.user)}
-      ariaLabel={capitalizeFirstLetter(author || translateUserTitleRef.user)}
+      tooltipText={capitalizeFirstLetter(author || "User")}
+      ariaLabel={capitalizeFirstLetter(author || "User")}
     />
   );
 }
@@ -1112,10 +947,10 @@ function MessageTimestamp({ timestamp }: { timestamp: number | string }) {
   );
 }
 
-const LoadingMessage = ({ loadingMsg }: { loadingMsg: string }) => (
+const LoadingMessage = () => (
   <Box color="text-status-inactive">
     <div style={{ display: "flex", gap: 7 }}>
-      {loadingMsg}
+      Generating a response
       <DotLoader />
     </div>
   </Box>
