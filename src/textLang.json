@@ -1,0 +1,53 @@
+{
+  "en_US": {
+    "llmResponsePharsingErrorMessage": "Something went wrong. Please try again.",
+    "llmSendMessageError": "Message failed to send. Please try again.",
+    "sfSessionEndedMessage": "This session has ended",
+    "uiEndChatBtnText": "End Chat",
+    "uiDownloadTranscriptBtnText": "Download Transcript",
+    "uiChatTitle": "Chat",
+    "uiStartNewChatBnText": "Start New Chat",
+    "uiTypeMessageInputText": "Type a message",
+    "loadingMsgText": "Generating a response",
+    "translateUserTitle": {
+      "user": "User",
+      "agent": "Agent",
+      "assistant": "Assistant",
+      "genai": "Gen-AI"
+    }
+  },
+  "en_IN": {
+    "llmResponsePharsingErrorMessage": "Something went wrong. Please try again.",
+    "llmSendMessageError": "Message failed to send. Please try again.",
+    "sfSessionEndedMessage": "This session has ended",
+    "uiEndChatBtnText": "End Chat",
+    "uiDownloadTranscriptBtnText": "Download Transcript",
+    "uiChatTitle": "Chat",
+    "uiStartNewChatBnText": "Start New Chat",
+    "uiTypeMessageInputText": "Type a message",
+    "loadingMsgText": "Generating a response",
+    "translateUserTitle": {
+      "user": "User",
+      "agent": "Agent",
+      "assistant": "Assistant",
+      "genai": "Gen-AI"
+    }
+  },
+  "es_MX": {
+    "llmResponsePharsingErrorMessage": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "llmSendMessageError": "El mensaje no se pudo enviar. Por favor, inténtalo de nuevo.",
+    "sfSessionEndedMessage": "Esta sesión ha finalizado",
+    "uiEndChatBtnText": "Finalizar chat",
+    "uiDownloadTranscriptBtnText": "Descargar transcripción",
+    "uiChatTitle": "Chat",
+    "uiStartNewChatBnText": "Iniciar nuevo chat",
+    "uiTypeMessageInputText": "Escribe un mensaje",
+    "loadingMsgText": "Generando una respuesta",
+    "translateUserTitle": {
+      "user": "Usuario",
+      "agent": "Agente",
+      "assistant": "Asistente",
+      "genai": "Gen-AI"
+    }
+  }
+}

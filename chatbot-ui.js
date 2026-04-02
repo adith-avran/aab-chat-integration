@@ -18,9 +18,9 @@ const injectedCSS = `
     max-width: 30vw;
     height: 54px;
     background: #ffffff;
-    border: 1px solid #e0e0e0;
+    border: 0.5px solid #ff000e;
     border-radius: 27px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: 0px 3px 24px rgb(255 0 0 / 10%);
     display: flex;
     align-items: center;
     padding: 0 24px;
@@ -31,9 +31,8 @@ const injectedCSS = `
     user-select: none;
 }
 #custom-chat-launcher:hover {
-    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    box-shadow: -2px 7px 15px rgb(255 0 0 / 18%);
     transform: translateX(-50%) translateY(-2px);
-    border-color: #d1d1d1;
 }
 #custom-chat-launcher:active {
     transform: translateX(-50%) translateY(0);
@@ -108,7 +107,7 @@ function injectChatInterface() {
   const launcher = document.createElement("div");
   launcher.id = "custom-chat-launcher";
   launcher.innerHTML = `
-<div style='width: 100%; display: flex; justify-content: space-between'>
+<div style='width: 100%; display: flex; justify-content: space-between;align-items: center;'>
     <span>Talk to us...</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chat-dots" viewBox="0 0 16 16">
         <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0m4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>

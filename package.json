@@ -17,7 +17,9 @@
     "aws-amplify": "^6.6.6",
     "event-source-polyfill": "^1.0.31",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "proxy": "https://lkt7uqrua5.execute-api.eu-west-1.amazonaws.com"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.5.0",
