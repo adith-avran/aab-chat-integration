@@ -121,7 +121,7 @@ function injectChatInterface() {
   modal.id = "custom-chat-modal";
   const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
   const country = window.CHAT_SESSION_COUNTRY || "US";
-  const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
+  const iframeUrl = `https://dg3aic71lh9nz.cloudfront.net?lang=${lang}&country=${country}`;
   modal.innerHTML = `
 <div id="custom-chat-modal-content">
     
