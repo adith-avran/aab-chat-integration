@@ -45,7 +45,7 @@ const injectedCSS = `
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgb(0 0 0 / 40%);
+    background: rgba(0, 7, 22, 0.25);
     
     z-index: 1000000;
     justify-content: center;
@@ -63,7 +63,7 @@ const injectedCSS = `
     max-width: 900px;
     height: 75vh;
     background: #ffffff;
-    border-radius: 16px;
+    border-radius: 10px;
     pointer-events: auto;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0,0,0,0.3);
@@ -121,7 +121,7 @@ function injectChatInterface() {
   modal.id = "custom-chat-modal";
   const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
   const country = window.CHAT_SESSION_COUNTRY || "US";
-  const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
+  const iframeUrl = `https://dg3aic71lh9nz.cloudfront.net?lang=${lang}&country=${country}`;
   modal.innerHTML = `
 <div id="custom-chat-modal-content">
     

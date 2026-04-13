@@ -13,9 +13,9 @@
 .chat_header h2 {
   margin: 0;
   /* line-height: 26px; */
-  color: #ff0000;
+  color: #0F0F0F;
 }
-div:has(.chat_header) {
+.containerComponent > div > div:has(.chat_header) {
   border-bottom: 1px solid #d9d9db !important;
 }
 .chat_header > div {
@@ -30,7 +30,7 @@ div:has(.chat_header) {
 }
 
 .chat_header button > span > svg {
-  color: #ff0000;
+  /* color: #ff0000; */
 }
 
 html,

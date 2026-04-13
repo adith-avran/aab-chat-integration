@@ -18,6 +18,8 @@ import { CONVERSATION_CONSTANTS } from "./constants";
 import { InputProps } from "@cloudscape-design/components";
 import { NonCancelableCustomEvent } from "@cloudscape-design/components/interfaces";
 import langTextData from "./textLang.json";
+// import ABBLogo from "./assets/ABB_Logo.svg"
+import ABBLogo from "./assets/ABB_Logo.png"
 
 export type LLMessage = {
   id: string;
@@ -27,6 +29,7 @@ export type LLMessage = {
   loading?: boolean;
   sentMessage?: boolean;
   name?: string;
+  sending?: boolean;
 };
 
 function timestampToDateString(timestamp: number) {
@@ -47,7 +50,7 @@ function timestampToDateString(timestamp: number) {
 function parseEventData(data: string) {
   const jsonData = JSON.parse(data);
   const entryPayload = JSON.parse(jsonData.conversationEntry.entryPayload);
-  console.log(jsonData, entryPayload);
+  // console.log(jsonData, entryPayload);
   const firstEntry = entryPayload.entries?.[0] ?? {};
 
   return {
@@ -89,6 +92,8 @@ function Chat() {
   const [loading, setLoading] = useState<boolean>(false);
   const [isAgentTyping, setIsAgentTyping] = useState(false);
   const [chatState, setChatState] = useState<string | null>(null);
+  const [disablePromptInput, setDisablePromptInput] = useState<boolean>(false);
+  const [loadingNewChat, setLoadingNewChat] = useState(false);
   const esRef = useRef<EventSource | null>(null);
 
   const langFormatText =
@@ -142,12 +147,31 @@ function Chat() {
     }, 1000);
   };
 
-  function handleNewChat() {
-    esRef.current?.close(); // ✅ Add this
-    esRef.current = null;
+  async function handleNewChat() {
+    try {
+      setLoadingNewChat(true);
+      esRef.current?.close(); // ✅ Add this
+      esRef.current = null;
+      lastEventIdRef.current = undefined; // ✅ clear stale ID
 
-    setMessages([]);
-    setChatState("AIChat");
+      const response = await fetch(import.meta.env.VITE_LL_API, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intent: "ClearSession",
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setDisablePromptInput(false);
+        setMessages([]);
+        setChatState("AIChat");
+      }
+    } catch (e) {
+      console.error("Couldn't end chat session", e);
+    }
+    setLoadingNewChat(false);
   }
 
   async function onMessage(e: any) {
@@ -158,6 +182,20 @@ function Chat() {
     setPromptVal("");
     sendTypingEvent(CONVERSATION_CONSTANTS.EntryTypes.TYPING_STOPPED_INDICATOR);
     if (chatState === "SFChat") {
+      const tempId = uuid();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          timestamp: Date.now(),
+          author: "user",
+          content: trimmed,
+          sentMessage: true,
+          sending: true,
+        },
+      ]);
+
       const res = await fetch(import.meta.env.VITE_SF_API, {
         method: "POST",
         credentials: "include",
@@ -165,6 +203,7 @@ function Chat() {
         body: JSON.stringify({
           intent: "SendMessage",
           message: trimmed,
+          clientMessageId: tempId,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -204,6 +243,10 @@ function Chat() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        let responseText = data.response;
+        if (data.fallbackTransfer) {
+          responseText = langFormatText.llmTransferToAgentFallbackMessage;
+        }
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -212,7 +255,7 @@ function Chat() {
                   ...msg,
                   loading: false,
                   content:
-                    data.response ??
+                    responseText ??
                     langFormatText.llmResponsePharsingErrorMessage,
                 }
               : msg,
@@ -220,7 +263,8 @@ function Chat() {
         );
         if (data.intent === "TransferToAgent") {
           subscribeToTunnel(data);
-        } else {
+        } else if (data.intent === "conversation_end") {
+          closeAISession();
         }
 
         // if (
@@ -350,6 +394,7 @@ function Chat() {
 
   function closeSFSession() {
     if (chatState === "Ended") return;
+    setDisablePromptInput(true);
     fetch(import.meta.env.VITE_SF_API, {
       method: "POST",
       credentials: "include",
@@ -363,10 +408,12 @@ function Chat() {
         if (data.success) {
           setChatState("Ended");
         }
+        setDisablePromptInput(false);
       });
   }
   function closeAISession() {
     if (chatState === "Ended") return;
+    setDisablePromptInput(true);
     fetch(import.meta.env.VITE_LL_API, {
       method: "POST",
       credentials: "include",
@@ -380,6 +427,7 @@ function Chat() {
         if (data.success) {
           setChatState("Ended");
         }
+        setDisablePromptInput(false);
       });
   }
 
@@ -403,7 +451,7 @@ function Chat() {
             eventData.content.staticContent?.formatType ===
               CONVERSATION_CONSTANTS.FormatTypes.TEXT
           ) {
-            console.log("adding to list");
+            // console.log("adding to list");
 
             return {
               id: uuid(),
@@ -448,7 +496,8 @@ function Chat() {
         ) {
           //
           if (eventData.content.sessionStatus == "Ended") {
-            closeSFSession();
+            // closeSFSession();
+            setChatState("Ended");
             return {
               id: uuid(),
               timestamp: eventData.transcriptedTimestamp,
@@ -459,7 +508,7 @@ function Chat() {
           }
         }
         if (i.entryType == CONVERSATION_CONSTANTS.EntryTypes.ROUTING_RESULT) {
-          console.log(eventData);
+          // console.log(eventData);
 
           if (eventData.content.failureReason) {
             if (
@@ -467,6 +516,7 @@ function Chat() {
               "No Agents are available. Please submit a web inquiry using the web contact form."
             ) {
               // closeSFSession();
+              // setChatState('Ended');
             }
             return {
               id: eventData.messageId,
@@ -482,22 +532,250 @@ function Chat() {
   }
 
   const subscribeToTunnel = (data: any) => {
-    console.log("subscribeToTunnel called", new Date().toISOString());
-
     if (esRef.current) {
       esRef.current.close();
       esRef.current = null;
     }
 
+    if (!data) return;
     const apiPathWithTimestamp = data.salesforceData.sseUrl;
     const es = new EventSourcePolyfill(apiPathWithTimestamp, {
       ...data.salesforceData.reqAttr,
+      headers: {
+        ...data.salesforceData.reqAttr?.headers,
+        // ✅ Resume from last known event — server replays missed events
+        ...(lastEventIdRef.current
+          ? { "Last-Event-Id": lastEventIdRef.current }
+          : {}),
+      },
+      heartbeatTimeout: 60000,
     });
     esRef.current = es;
 
-    es.onopen = (event: any) => {
-      console.log('opened socket');
-      
+    // ✅ Capture Last-Event-ID from every event so reconnect can resume
+    const trackLastId = (e: any) => {
+      if (e.lastEventId) lastEventIdRef.current = e.lastEventId;
+    };
+
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
+      (e) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+
+        if (
+          eventData.actorType !==
+          CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+        ) {
+          setIsAgentTyping(true);
+        }
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STOPPED_INDICATOR,
+      (e) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+
+        if (
+          eventData.actorType !==
+          CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
+        ) {
+          setIsAgentTyping(false);
+        }
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+      (e: any) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+
+        if (
+          eventData.messageType ===
+            CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
+          eventData.content.staticContent?.formatType ===
+            CONVERSATION_CONSTANTS.FormatTypes.TEXT
+        ) {
+          // console.log("adding to list");
+
+          if (eventData.actorType === "EndUser") {
+            const clientMessageId = eventData.messageId; // whatever field your backend echoes it back as
+
+            setMessages((prev) => {
+              const idx = prev.findIndex((m) => m.id === clientMessageId);
+              if (idx === -1)
+                return [
+                  ...prev,
+                  {
+                    id: eventData.messageId,
+                    timestamp: eventData.transcriptedTimestamp,
+                    author: eventData.actorType == "EndUser" ? "user" : "agent",
+                    content: eventData.content.staticContent.text,
+                    name: eventData.actorName,
+                  },
+                  // {
+                  //   EVENT:
+                  //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+                  //   DATA: eventData,
+                  // },
+                ];
+              const updated = [...prev];
+              updated[idx] = {
+                id: eventData.messageId,
+                timestamp: eventData.transcriptedTimestamp,
+                author: "user",
+                content: eventData.content.staticContent.text,
+                sentMessage: true,
+                sending: false,
+              };
+              return updated;
+            });
+            return;
+          }
+
+          // setMessages((prev) => [
+          //   ...prev,
+          //   {
+          //     id: eventData.messageId,
+          //     timestamp: eventData.transcriptedTimestamp,
+          //     author: eventData.actorType == "EndUser" ? "user" : "agent",
+          //     content: eventData.content.staticContent.text,
+          //     name: eventData.actorName,
+          //   },
+          //   // {
+          //   //   EVENT:
+          //   //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+          //   //   DATA: eventData,
+          //   // },
+          // ]);
+        }
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_ROUTING_RESULT,
+      (e: any) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+        // console.log(eventData);
+
+        if (eventData.content.failureReason) {
+          if (
+            eventData.content.failureReason ===
+            "No Agents are available. Please submit a web inquiry using the web contact form."
+          ) {
+            // closeSFSession();
+            // setChatState('Ended');
+          }
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: eventData.messageId,
+              timestamp: eventData.transcriptedTimestamp,
+              author: eventData.actorType,
+              content: [eventData.content.failureReason],
+              name: eventData.actorName,
+            },
+            // {
+            //   EVENT:
+            //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+            //   DATA: eventData,
+            // },
+          ]);
+        }
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_PARTICIPANT_CHANGED,
+      (e: any) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uuid(),
+            timestamp: eventData.transcriptedTimestamp,
+            author: "System",
+            content: eventData.content.entries.map(
+              (j: any) =>
+                `${j.displayName} has ${
+                  j.operation == "add"
+                    ? "joined"
+                    : j.operation == "remove"
+                    ? "left"
+                    : ""
+                }`,
+            ),
+            sentMessage: true,
+          },
+        ]);
+        // setMessages((prev) => [
+        //   ...prev,
+        //   {
+        //     EVENT:
+        //       CONVERSATION_CONSTANTS.EventTypes
+        //         .CONVERSATION_PARTICIPANT_CHANGED,
+        //     DATA: eventData,
+        //   },
+        // ]);
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_CLOSE_CONVERSATION,
+      (e: any) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+        if (eventData) {
+          // setSessionStatus(eventData.content.sessionStatus);
+          // closeSFSession();
+          setChatState("Ended");
+        }
+      },
+    );
+    es.addEventListener(
+      CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_SESSION_STATUS_CHANGED,
+      (e: any) => {
+        trackLastId(e);
+
+        const eventData = parseEventData(e.data);
+        // setSessionStatus(eventData.content.sessionStatus);
+        if (eventData.content.sessionStatus == "Ended") {
+          esRef.current?.close(); // ✅ Add this
+          esRef.current = null;
+          setChatState("Ended");
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uuid(),
+              timestamp: eventData.transcriptedTimestamp,
+              author: "System",
+              content: [langFormatText.sfSessionEndedMessage],
+              sentMessage: true,
+            },
+          ]);
+          // closeSFSession();
+          // setChatState('Ended');
+          // setMessages((prev
+          // setMessages((prev) => [
+          //   ...prev,
+          //   {
+          //     EVENT:
+          //       CONVERSATION_CONSTANTS.EventTypes
+          //         .CONVERSATION_SESSION_STATUS_CHANGED,
+          //     DATA: eventData,
+          //   },
+          // ]);
+        }
+      },
+    );
+
+    es.onopen = () => {
       setChatState("SFChat");
       // es.addEventListener(
       //   CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
@@ -525,176 +803,12 @@ function Chat() {
       //     }
       //   },
       // );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STARTED_INDICATOR,
-        (e) => {
-          const eventData = parseEventData(e.data);
 
-          if (
-            eventData.actorType !==
-            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
-          ) {
-            setIsAgentTyping(true);
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_TYPING_STOPPED_INDICATOR,
-        (e) => {
-          const eventData = parseEventData(e.data);
-
-          if (
-            eventData.actorType !==
-            CONVERSATION_CONSTANTS.ParticipantRoles.ENDUSER
-          ) {
-            setIsAgentTyping(false);
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
-        (e: any) => {
-          const eventData = parseEventData(e.data);
-
-          if (
-            eventData.messageType ===
-              CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
-            eventData.content.staticContent?.formatType ===
-              CONVERSATION_CONSTANTS.FormatTypes.TEXT
-          ) {
-            console.log("adding to list");
-
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: eventData.messageId,
-                timestamp: eventData.transcriptedTimestamp,
-                author: eventData.actorType == "EndUser" ? "user" : "agent",
-                content: eventData.content.staticContent.text,
-                name: eventData.actorName,
-              },
-              // {
-              //   EVENT:
-              //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
-              //   DATA: eventData,
-              // },
-            ]);
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_ROUTING_RESULT,
-        (e: any) => {
-          const eventData = parseEventData(e.data);
-          console.log(eventData);
-
-          if (eventData.content.failureReason) {
-            if (
-              eventData.content.failureReason ===
-              "No Agents are available. Please submit a web inquiry using the web contact form."
-            ) {
-              // closeSFSession();
-            }
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: eventData.messageId,
-                timestamp: eventData.transcriptedTimestamp,
-                author: eventData.actorType,
-                content: [eventData.content.failureReason],
-                name: eventData.actorName,
-              },
-              // {
-              //   EVENT:
-              //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
-              //   DATA: eventData,
-              // },
-            ]);
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_PARTICIPANT_CHANGED,
-        (e: any) => {
-          const eventData = parseEventData(e.data);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uuid(),
-              timestamp: eventData.transcriptedTimestamp,
-              author: "System",
-              content: eventData.content.entries.map(
-                (j: any) =>
-                  `${j.displayName} has ${
-                    j.operation == "add"
-                      ? "joined"
-                      : j.operation == "remove"
-                      ? "left"
-                      : ""
-                  }`,
-              ),
-              sentMessage: true,
-            },
-          ]);
-          // setMessages((prev) => [
-          //   ...prev,
-          //   {
-          //     EVENT:
-          //       CONVERSATION_CONSTANTS.EventTypes
-          //         .CONVERSATION_PARTICIPANT_CHANGED,
-          //     DATA: eventData,
-          //   },
-          // ]);
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_CLOSE_CONVERSATION,
-        (e: any) => {
-          const eventData = parseEventData(e.data);
-          if (eventData) {
-            // setSessionStatus(eventData.content.sessionStatus);
-            closeSFSession();
-          }
-        },
-      );
-      es.addEventListener(
-        CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_SESSION_STATUS_CHANGED,
-        (e: any) => {
-          const eventData = parseEventData(e.data);
-          // setSessionStatus(eventData.content.sessionStatus);
-          if (eventData.content.sessionStatus == "Ended") {
-            esRef.current?.close(); // ✅ Add this
-            esRef.current = null;
-            setChatState("Ended");
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uuid(),
-                timestamp: eventData.transcriptedTimestamp,
-                author: "System",
-                content: [langFormatText.sfSessionEndedMessage],
-                sentMessage: true,
-              },
-            ]);
-            closeSFSession();
-            // setMessages((prev
-            // setMessages((prev) => [
-            //   ...prev,
-            //   {
-            //     EVENT:
-            //       CONVERSATION_CONSTANTS.EventTypes
-            //         .CONVERSATION_SESSION_STATUS_CHANGED,
-            //     DATA: eventData,
-            //   },
-            // ]);
-          }
-        },
-      );
-      console.log(event);
+      console.log("Chat opened");
     };
 
     es.onerror = async () => {
-      console.log("error of sse");
+      console.log("Disconnected for some reasson");
 
       es.close();
       esRef.current = null;
@@ -703,6 +817,7 @@ function Chat() {
   };
 
   const refreshSFToken = async () => {
+    if (chatState !== "SFChat") return;
     const res = await fetch(import.meta.env.VITE_SF_API, {
       method: "POST",
       credentials: "include",
@@ -743,7 +858,7 @@ function Chat() {
             ...messages_too_add,
             ...parse_fetched_ai_chats(data.previous_ai_chats),
           ];
-          if (data.state === "SFChat") {
+          if (data.salesforce_messages) {
             subscribeToTunnel(data.salesforce_data);
             messages_too_add = [
               ...messages_too_add,
@@ -755,12 +870,19 @@ function Chat() {
       });
   }, []);
 
+  const lastEventIdRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        esRef.current?.close();
+      if (document.visibilityState === "visible") {
+        const state = esRef.current?.readyState;
+        // Only reconnect if the connection actually died
+        if (state === undefined || state === EventSource.CLOSED) {
+          refreshSFToken();
+        }
       }
     };
+
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
@@ -781,7 +903,10 @@ function Chat() {
 
   useEffect(() => {
     const refresh = async () => {
-      if (chatStateRef.current === "AIChat") {
+      if (
+        chatStateRef.current === "AIChat" ||
+        chatStateRef.current === "SFChat"
+      ) {
         if (messagesRef.current.length === 0) return;
         await fetch(import.meta.env.VITE_LL_API, {
           method: "POST",
@@ -791,7 +916,6 @@ function Chat() {
         });
       }
     };
-
     const interval = setInterval(refresh, 1000 * 60 * 5);
     return () => clearInterval(interval);
   }, []);
@@ -810,6 +934,7 @@ function Chat() {
             // header={<Header variant="h1">Chatbot Aggregator-Test Interface</Header>}
             style={{ root: { borderWidth: "0px" } }}
             fitHeight
+            className="containerComponent"
             disableContentPaddings
             header={
               <div className="chat_header">
@@ -842,8 +967,11 @@ function Chat() {
                       }
                     }}
                   />
-                  <img src="https://abb.my.site.com/resource/1738743454000/ABBlogoforMessaging" />
+                  <img src={ABBLogo} />
                   <h2>{langFormatText.uiChatTitle}</h2>
+                  <h2 style={{ color: "#00000073", fontWeight: 500 }}>
+                    ({import.meta.env.VITE_CHAT_APP_BRANCH})
+                  </h2>
                 </div>
               </div>
             }
@@ -851,7 +979,7 @@ function Chat() {
               <SpaceBetween size="s">
                 {chatState === "Ended" ? (
                   <div style={{ textAlign: "center" }}>
-                    <Button onClick={handleNewChat}>
+                    <Button onClick={handleNewChat} loading={loadingNewChat}>
                       {langFormatText.uiStartNewChatBnText}
                     </Button>
                   </div>
@@ -866,6 +994,7 @@ function Chat() {
                     disableActionButton={
                       loading || [null, "Ended"].includes(chatState)
                     }
+                    disabled={!chatState || disablePromptInput}
                     maxRows={8}
                     minRows={3}
                   />
@@ -982,7 +1111,19 @@ function Chat() {
                                       whiteSpace: "pre-wrap",
                                     }}
                                   >
-                                    <Markdown>
+                                    <Markdown
+                                      components={{
+                                        a: ({ href, children }) => (
+                                          <a
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                          >
+                                            {children}
+                                          </a>
+                                        ),
+                                      }}
+                                    >
                                       {Array.isArray(message.content)
                                         ? message.content.join("\n")
                                         : message.content ?? ""}
@@ -998,6 +1139,7 @@ function Chat() {
                                 >
                                   <MessageTimestamp
                                     timestamp={message.timestamp}
+                                    sending={message.sending}
                                   />
                                 </Box>
                               )}
@@ -1092,7 +1234,13 @@ function ChatBubbleAvatar({
   );
 }
 
-function MessageTimestamp({ timestamp }: { timestamp: number | string }) {
+function MessageTimestamp({
+  timestamp,
+  sending,
+}: {
+  timestamp: number | string;
+  sending: boolean | null | undefined;
+}) {
   const date = new Date(timestamp);
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -1107,7 +1255,9 @@ function MessageTimestamp({ timestamp }: { timestamp: number | string }) {
 
   return (
     <Box color="text-body-secondary">
-      <small style={{ marginInline: 40 }}>{time}</small>
+      <small style={{ marginInline: 40 }}>
+        {sending ? "Sending..." : time}
+      </small>
     </Box>
   );
 }
