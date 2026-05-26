@@ -1,0 +1,39 @@
+{
+  "en": {
+    "llmResponsePharsingErrorMessage": "Something went wrong. Please try again.",
+    "llmSendMessageError": "Message failed to send. Please try again.",
+    "llmTransferToAgentFallbackMessage": "Sorry, something went wrong. Let me transfer you to the next available agent",
+    "sfSessionEndedMessage": "This session has ended",
+    "uiEndChatBtnText": "End Chat",
+    "uiDownloadTranscriptBtnText": "Download Transcript",
+    "uiChatTitle": "CHAT",
+    "uiStartNewChatBnText": "Start New Chat",
+    "uiTypeMessageInputText": "Type a message",
+    "loadingMsgText": "Generating a response",
+    "translateUserTitle": {
+      "user": "Customer",
+      "agent": "Agent",
+      "assistant": "Assistant",
+      "genai": "ABB Bot"
+    },
+    "closeChatTextFields": {
+      "title": "Are you sure you want to exit the chat?",
+      "body": "The window will be minimized and your session will be saved automatically. You may resume at any time within the next 2 hours. To end the session, please click End Chat from the menu dropdown",
+      "ok": "Ok",
+      "cancel": "Cancel"
+    },
+    "disclaimerTextFields": {
+      "cancel": "Cancel",
+      "continue": "Continue",
+      "title": "Welcome To ABB Chatbot",
+      "header": "Before you begin",
+      "gdprConscent": "By chatting, you agree this chat may be monitored, recorded, and used for personalization, analytics, and other business services per our Privacy Statement.",
+      "marketingConscent": "I consent to receive offers and news on products, services and events from ABB in accordance with ABB's Privacy Policy",
+      "note": "Note: I am powered by AI. Before using AI results, verify accuracy and completeness"
+    },
+    "startupChatMessages": [
+      "Hi!",
+      "Please state your issue so that we can direct you to the right department"
+    ]
+  }
+}

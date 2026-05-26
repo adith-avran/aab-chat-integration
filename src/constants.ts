@@ -58,6 +58,7 @@ export const CONVERSATION_CONSTANTS = {
     TYPING_STOPPED_INDICATOR: "TypingStoppedIndicator",
     // new one
     SESSION_STATE_CHANGED: "SessionStatusChanged",
+    CLOSE_CONVERSATION: "CloseConversation"
   },
   /**
    * The semantic type of a Message entry type, i.e. what a message does.

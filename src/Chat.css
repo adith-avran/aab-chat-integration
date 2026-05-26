@@ -10,27 +10,24 @@
   width: 100%;
 }
 
-.chat_header h2 {
+.chat_header > .title h2 {
   margin: 0;
   /* line-height: 26px; */
-  color: #0F0F0F;
+  color: #0f0f0f;
 }
-.containerComponent > div > div:has(.chat_header) {
-  border-bottom: 1px solid #d9d9db !important;
+.containerComponent > div > div:has(.chat_header > .title) {
+  border-bottom: 1px solid #000 !important;
+  /* border-bottom: 1px solid #d9d9db !important; */
 }
-.chat_header > div {
+.chat_header > .title {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.chat_header img {
+.chat_header > .title img {
   width: auto;
   height: 18px;
   /* line-height: 26px; */
-}
-
-.chat_header button > span > svg {
-  /* color: #ff0000; */
 }
 
 html,
@@ -44,10 +41,133 @@ body,
   overflow-y: auto;
   min-height: 0;
 }
-.markdownContainerDiv > *{
+.markdownContainerDiv > * {
   margin: 0;
 }
 
 .disclaimer-modal [class*="awsui_variant-modal-dismiss_"] {
   display: none !important;
+}
+
+.containerComponent > div > div:has(.footer-div) {
+  border-block-start-color: #000000 !important;
+}
+
+/* .containerComponent > div > div:has(.footer-div) {
+  border-block-start-color: rgba(0, 0, 0, 0.5) !important;
+} */
+
+.chat_header > .title button > span > svg {
+  color: #0f0f0f;
+}
+
+@keyframes fillColor {
+  from {
+    color: #0f0f0f;
+  }
+  to {
+    color: #615eef;
+  }
+}
+
+.chat_header > .title button > span > svg {
+  color: #0f0f0f;
+  transition: color 0.3s cubic-bezier(0.65, 0, 0.35, 1) 0s;
+}
+.change-modal-close-icon svg {
+  transition: color 0.3s cubic-bezier(0.65, 0, 0.35, 1) 0s;
+}
+
+/* .chat_header button:hover > span > svg {
+  color: #615eef;
+} */
+
+.chat_header {
+  display: flex;
+  justify-content: space-between;
+}
+
+#custom-chat-modal-close {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+#custom-chat-modal-close > svg {
+  fill: #0f0f0f;
+  transition: fill 0.3s cubic-bezier(0.65, 0, 0.35, 1) 0s;
+}
+
+.change-modal-close-icon span:hover > svg {
+  color: #615eef !important;
+}
+#custom-chat-modal-close > svg:hover {
+  fill: #615eef;
+}
+
+.awsui-context-alert [class*="awsui_type-info"] {
+  background-color: #ebf1ff;
+  border: 0px !important;
+}
+
+.awsui-context-alert [class*="awsui_type-info"] svg {
+  visibility: hidden;
+}
+
+.awsui-context-alert [class*="awsui_type-info"] span[class*="awsui_icon_"] {
+  position: relative;
+}
+
+.awsui-context-alert
+  [class*="awsui_type-info"]
+  span[class*="awsui_icon_"]::after {
+  content: "";
+  visibility: visible;
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0ZM8.99976 8V12C8.99976 12.5523 8.55204 13 7.99976 13C7.44747 13 6.99976 12.5523 6.99976 12V8C6.99976 7.44772 7.44747 7 7.99976 7C8.55204 7 8.99976 7.44772 8.99976 8ZM9.25037 4.25195C9.25037 4.94231 8.69072 5.50195 8.00037 5.50195C7.31001 5.50195 6.75037 4.94231 6.75037 4.25195C6.75037 3.5616 7.31001 3.00195 8.00037 3.00195C8.69072 3.00195 9.25037 3.5616 9.25037 4.25195Z' fill='%230F0F0F'%2F%3E%3C%2Fsvg%3E")
+    no-repeat center / contain;
+}
+
+[class*="awsui_label-wrapper"] [class*="awsui_checkbox-control_"] svg > rect {
+  rx: 0;
+  ry: 0;
+  stroke-width: 5%;
+  stroke: #000 !important;
+}
+[class*="awsui_label-wrapper"]:has([class*="awsui_checkbox-control_"]:hover)
+  svg
+  > rect {
+  stroke-width: 13% !important;
+  stroke: #615eef !important;
+}
+
+[class*="awsui_label-wrapper"]
+  [class*="awsui_checkbox-control_"]:has(input:checked)
+  svg
+  > rect {
+  fill: #615eef !important;
+}
+[class*="awsui_checkbox-control_"] > [class*="awsui_outline_"]::before {
+  box-shadow: 0 0 0 1px #2934ff !important;
+  border-radius: 0 !important;
+
+  inline-size: calc(100% + 1px + 1px) !important;
+  block-size: calc(100% + 1px + 1px) !important;
+  inset-inline-start: calc(-1px) !important;
+  inset-block-start: calc(-1px) !important;
+}
+
+[class*="awsui_options-list"] li[class*="awsui_item-element_"] span {
+  cursor: pointer;
+}
+[class*="awsui_options-list"] li[class*="awsui_item-element_"] {
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+[class*="awsui_options-list"] > li:not([class*="awsui_disabled_"]) * {
+  color: #1f1f1f !important;
+}
+
+[class*="awsui_dropdown-content-wrapper_"]::after {
+  border-color: #c6c6cd !important;
 }

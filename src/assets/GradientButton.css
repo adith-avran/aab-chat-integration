@@ -1,0 +1,52 @@
+/* GradientButton.css */
+
+.gradient-btn-wrap {
+  display: inline-block;
+  position: relative;
+  padding: 2px;
+  border-radius: 22px;
+  background: #000000;
+}
+
+.gradient-btn-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: linear-gradient(to right, #615eef 13%, #ee0000 65.5%);
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.gradient-btn-wrap:hover::before {
+  opacity: 1;
+}
+
+/* keep button content above the ::before layer */
+.gradient-btn-wrap [class*="awsui_button_"] span {
+  color: #000000;
+}
+.gradient-btn-wrap [class*="awsui_button_"]:hover {
+  background: #fff !important;
+}
+.gradient-btn-wrap [class*="awsui_button_"] {
+  position: relative;
+  z-index: 1;
+}
+
+.gradient-btn-wrap [class*="awsui_variant-normal_"] {
+  border-block-color: transparent !important;
+  border-inline-color: transparent !important;
+  box-shadow: none !important;
+}
+
+
+.gradient-btn-wrap:has(button[aria-disabled="true"])::before {
+  opacity: 0;
+}
+.gradient-btn-wrap:has(button[aria-disabled="true"]) {
+  background: #dbdbdb !important;
+}
+.gradient-btn-wrap [class*="awsui_button_"][aria-disabled="true"] span {
+  color: #696969 !important;
+}

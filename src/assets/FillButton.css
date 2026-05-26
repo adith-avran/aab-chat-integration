@@ -1,0 +1,75 @@
+.fill-btn-wrap {
+  display: inline-block;
+  position: relative;
+  padding: 2px;
+  border-radius: 22px;
+  background: #ff0000;
+  color: #ffffff !important;
+}
+
+.fill-btn-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: linear-gradient(to right, #615eef 13%, #ee0000 65.5%);
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.fill-btn-wrap:hover::before {
+  opacity: 1;
+}
+
+.fill-btn-wrap button {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+    border-color 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.fill-btn-wrap:hover button {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.fill-btn-wrap:active::before {
+  background: #ff0000;
+  opacity: 1;
+}
+.fill-btn-wrap:active {
+  outline: 2px solid #2934ff;
+  outline-offset: 3px;
+}
+.fill-btn-wrap:has(button[disabled]):active {
+  outline: 0px;
+}
+
+.fill-btn-wrap:active button {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.fill-btn-wrap button span {
+  color: #ffffff;
+}
+
+.fill-btn-wrap button[disabled] {
+  background: #d67b7b !important;
+  border-color: #d67b7b !important;
+  color: #ffffff;
+}
+
+.fill-btn-wrap button[disabled] span {
+  color: #ffffff !important;
+}
+
+.fill-btn-wrap:has(button[disabled]) {
+  background: #d67b7b;
+}
+.fill-btn-wrap:has(button[disabled]):hover::before {
+  opacity: 0;
+}

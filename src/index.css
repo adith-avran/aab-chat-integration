@@ -1,0 +1,49 @@
+/* src/index.css */
+
+/* @font-face {
+  font-family: 'ABBVoiceReg';
+  src: url('./assets/fonts/ABBVoiceReg.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+} */
+
+@font-face {
+  font-family: "ABBvoice";
+  font-style: normal;
+  font-weight: 300;
+  src: url("./assets/fonts/ABBvoice_W_Lt.eot");
+  src: url("./assets/fonts/ABBvoice_W_Lt.eot") format("embedded-opentype"),
+    url("./assets/fonts/ABBvoice_W_Lt.woff2") format("woff2"),
+    url("./assets/fonts/ABBvoice_W_Lt.woff") format("woff");
+}
+
+@font-face {
+  font-family: "ABBvoice";
+  font-style: normal;
+  font-weight: 400;
+  src: url("./assets/fonts/ABBvoice_W_Rg.eot");
+  src: url("./assets/fonts/ABBvoice_W_Rg.eot?#iefix") format("embedded-opentype"),
+    url("./assets/fonts/ABBvoice_W_Rg.woff2") format("woff2"),
+    url("./assets/fonts/ABBvoice_W_Rg.woff") format("woff");
+}
+
+@font-face {
+  font-family: "ABBvoice";
+  font-style: normal;
+  font-weight: 500;
+  src: url("./assets/fonts/ABBvoice_W_Md.eot");
+  src: url("./assets/fonts/ABBvoice_W_Md.eot?#iefix") format("embedded-opentype"),
+    url("./assets/fonts/ABBvoice_W_Md.woff2") format("woff2"),
+    url("./assets/fonts/ABBvoice_W_Md.woff") format("woff");
+}
+
+@font-face {
+  font-family: "ABBvoice";
+  font-style: normal;
+  font-weight: 700;
+  src: url("./assets/fonts/ABBvoice_W_Bd.eot");
+  src: url("./assets/fonts/ABBvoice_W_Bd.eot?#iefix") format("embedded-opentype"),
+    url("./assets/fonts/ABBvoice_W_Bd.woff2") format("woff2"),
+    url("./assets/fonts/ABBvoice_W_Bd.woff") format("woff");
+}

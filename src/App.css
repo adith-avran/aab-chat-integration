@@ -4,3 +4,14 @@
 .chatInterface_container {
   border-radius: 0;
 }
+.disclaimer-modal
+  [class*="awsui_dialog_"]
+  [class*="awsui_main_"]:has([class*="awsui_heading-variant-h2"]) {
+  width: 100%;
+}
+.disclaimer-modal
+  [class*="awsui_dialog_"]
+  [class*="awsui_main_"]:has([class*="awsui_heading-variant-h2"])
+  [class*="awsui_title-variant-h2_"] {
+  width: 100%;
+}

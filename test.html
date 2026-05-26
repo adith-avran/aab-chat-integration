@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dispatch Control Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #1e1e1f;
+      --panel: #252526;
+      --panel-2: #2c2c2d;
+      --panel-3: #313132;
+      --border: #454546;
+      --soft-border: #3a3a3b;
+      --text: #ececec;
+      --muted: #a8a8aa;
+      --blue: #2588ff;
+      --green: #93cf4d;
+      --amber: #f1aa37;
+      --red: #ff5b5b;
+      --red-soft: #402424;
+    }
+
+    body {
+      background: #151515;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 1200px;
+      height: 760px;
+      background: var(--bg);
+      border-radius: 20px;
+      border: 1px solid #3b3b3c;
+      overflow: hidden;
+      box-shadow:
+        0 20px 60px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+      display: grid;
+      grid-template-columns: 325px 1fr 405px;
+      grid-template-rows: 86px 1fr;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--soft-border);
+      background: linear-gradient(to bottom, #272728, #1f1f20);
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #f5f5f5;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 14px;
+      padding: 8px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #303031;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .chip.blue {
+      background: rgba(41, 105, 185, 0.18);
+      color: #a9d0ff;
+      border-color: rgba(41, 105, 185, 0.45);
+    }
+
+    .chip.green {
+      background: rgba(102, 187, 106, 0.16);
+      color: #c7f4ab;
+      border-color: rgba(102, 187, 106, 0.45);
+    }
+
+    .chip.amber {
+      background: rgba(255, 167, 38, 0.16);
+      color: #ffcc80;
+      border-color: rgba(255, 167, 38, 0.45);
+    }
+
+    .chip .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .control-select {
+      margin-top: 14px;
+      background: #2c2c2d;
+      border: 1px solid #444;
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 21px;
+      font-weight: 600;
+      width: 100%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .left-panel {
+      border-right: 1px solid var(--soft-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .left-content {
+      padding: 16px 20px;
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 13px;
+      letter-spacing: 1.2px;
+      color: #a7a7a9;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    .zone-item,
+    .agent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .zone-left,
+    .agent-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid #707072;
+      background: transparent;
+    }
+
+    .checkbox.active {
+      background: #1674d9;
+      border-color: #1674d9;
+    }
+
+    .zone-name {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .badge {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50px;
+      background: #f3f3f3;
+      color: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .badge.red {
+      background: #fbe7e7;
+      color: #a92d2d;
+    }
+
+    .badge.dark {
+      background: #2f2f30;
+      color: #d9d9da;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #21568b;
+      background: #dbeeff;
+    }
+
+    .avatar.green { background: #dff5ea; color: #1f6a45; }
+    .avatar.orange { background: #ffe8d8; color: #8a4d1d; }
+    .avatar.purple { background: #ece8ff; color: #4f41a6; }
+
+    .agent-info h4 {
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .agent-info p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .status-dot.orange { background: var(--amber); }
+    .status-dot.gray { background: #777; }
+
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #212122;
+    }
+
+    .alert-banner {
+      margin: 18px;
+      background: linear-gradient(to bottom, #5c2f2f, #4b2525);
+      border: 1px solid rgba(255, 109, 109, 0.4);
+      border-radius: 16px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .alert-left {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .alert-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 12px rgba(255, 91, 91, 0.8);
+    }
+
+    .alert-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffdada;
+      margin-bottom: 6px;
+    }
+
+    .alert-sub {
+      color: #f1b9b9;
+      font-size: 14px;
+    }
+
+    .answer-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 16px 28px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.55);
+      font-size: 17px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .tabs {
+      display: flex;
+      padding: 0 18px;
+      gap: 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .tab {
+      padding: 16px 0;
+      color: #bdbdbf;
+      font-size: 15px;
+      position: relative;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      color: #4ea3ff;
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 100%;
+      height: 3px;
+      border-radius: 10px;
+      background: #248bff;
+    }
+
+    .tab-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #3a3a3b;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .calls {
+      padding: 0 0 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .table-head {
+      display: grid;
+      grid-template-columns: 1.3fr 1.6fr 1fr 0.8fr;
+      padding: 16px 22px;
+      color: #8f8f91;
+      font-size: 12px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .group-label {
+      padding: 18px 22px 10px;
+      color: #b7b7b8;
+      font-size: 14px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    .call-row {
+      margin: 0 12px 10px;
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 1.3fr 1.6fr 1fr 0.8fr;
+      align-items: center;
+      padding: 16px 14px;
+      background: #2c2c2d;
+      border-left: 4px solid transparent;
+      transition: 0.2s ease;
+    }
+
+    .call-row:hover {
+      transform: translateY(-1px);
+      background: #343435;
+    }
+
+    .call-row.red {
+      background: #4a2a2a;
+      border-left-color: var(--red);
+    }
+
+    .call-row.yellow {
+      background: #4d4027;
+      border-left-color: #f0a533;
+    }
+
+    .call-row.green {
+      border-left-color: #74d14c;
+    }
+
+    .call-row.gray {
+      border-left-color: #888;
+    }
+
+    .caller {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .signal {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #ef5d5d;
+    }
+
+    .signal.orange { background: #f0a533; }
+    .signal.green { background: #72c848; }
+    .signal.blue { background: #9ecbff; }
+    .signal.gray { background: #888; }
+
+    .call-number {
+      line-height: 1.4;
+      color: #e8e8e8;
+      font-size: 15px;
+    }
+
+    .queue-zone,
+    .job-no {
+      color: #d3d3d3;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .priority {
+      justify-self: start;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .priority.red {
+      background: rgba(255, 87, 87, 0.18);
+      color: #ff7d7d;
+    }
+
+    .priority.orange {
+      background: rgba(255, 171, 64, 0.18);
+      color: #ffbd68;
+    }
+
+    .priority.blue {
+      background: rgba(61, 145, 255, 0.18);
+      color: #8fc5ff;
+    }
+
+    .bottom-stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      background: #232324;
+    }
+
+    .stat-box {
+      padding: 18px 12px;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat-box:last-child {
+      border-right: none;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #a4a4a6;
+      line-height: 1.4;
+    }
+
+    .stat-red { color: #ff5f5f; }
+    .stat-orange { color: #ffb347; }
+    .stat-white { color: white; }
+
+    .right-panel {
+      border-left: 1px solid var(--soft-border);
+      display: flex;
+      flex-direction: column;
+      background: #232324;
+    }
+
+    .directory-header {
+      padding: 20px 22px 14px;
+    }
+
+    .search {
+      margin-top: 14px;
+      background: #2e2e2f;
+      border: 1px solid #444;
+      border-radius: 12px;
+      padding: 16px 18px;
+      color: #9d9d9f;
+      font-size: 16px;
+    }
+
+    .contacts {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .contact {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .contact h4 {
+      font-size: 17px;
+      margin-bottom: 5px;
+    }
+
+    .contact p {
+      color: #b4b4b5;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .contact span {
+      color: #8f8f91;
+      font-size: 13px;
+    }
+
+    .dial-btn {
+      border: 1px solid rgba(96, 163, 255, 0.55);
+      background: rgba(42, 108, 201, 0.15);
+      color: #a7ceff;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .add-contact {
+      padding: 18px 22px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      color: #3794ff;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4b4b4d;
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div style="width:100%">
+        <div class="top-left">
+          <div class="brand">CMDS</div>
+          <div class="chip blue">CONTROL</div>
+          <div class="chip green"><span class="dot"></span>Available</div>
+          <div class="chip amber">3 new</div>
+        </div>
+
+        <div class="control-select">
+          <span>Control — +44 113 000 1100</span>
+          <span>⌄</span>
+        </div>
+      </div>
+
+      <div style="margin-left:18px;color:#9d9d9f;font-weight:600;white-space:nowrap;">
+        Outbound CLI:
+      </div>
+    </div>
+
+    <aside class="left-panel">
+      <div class="left-content">
+        <div class="section-title">MY ZONES</div>
+
+        <div class="zone-item">
+          <div class="zone-left">
+            <div class="checkbox active"></div>
+            <div class="zone-name">Zone 1 — North</div>
+          </div>
+          <div class="badge">2</div>
+        </div>
+
+        <div class="zone-item">
+          <div class="zone-left">
+            <div class="checkbox active"></div>
+            <div class="zone-name">Zone 2 — South</div>
+          </div>
+          <div class="badge red">1</div>
+        </div>
+
+        <div class="zone-item">
+          <div class="zone-left">
+            <div class="checkbox"></div>
+            <div class="zone-name">Zone 3 — East</div>
+          </div>
+          <div class="badge dark">0</div>
+        </div>
+
+        <div class="zone-item">
+          <div class="zone-left">
+            <div class="checkbox"></div>
+            <div class="zone-name">Zone 4 — West</div>
+          </div>
+          <div class="badge">1</div>
+        </div>
+
+        <div class="zone-item" style="margin-bottom:20px;">
+          <div class="zone-left">
+            <div class="checkbox"></div>
+            <div class="zone-name">Emergency line</div>
+          </div>
+          <div class="badge red">2</div>
+        </div>
+
+        <div class="section-title">AGENTS ONLINE</div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar">SR</div>
+            <div class="agent-info">
+              <h4>S. Rahman</h4>
+              <p>On call — J. Hobbs</p>
+            </div>
+          </div>
+          <div class="status-dot orange"></div>
+        </div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar green">LK</div>
+            <div class="agent-info">
+              <h4>L. Kowalski</h4>
+              <p>Available</p>
+            </div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar orange">MB</div>
+            <div class="agent-info">
+              <h4>M. Brown</h4>
+              <p>On call — Unknown</p>
+            </div>
+          </div>
+          <div class="status-dot orange"></div>
+        </div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar purple">PJ</div>
+            <div class="agent-info">
+              <h4>P. Jones</h4>
+              <p>Away</p>
+            </div>
+          </div>
+          <div class="status-dot gray"></div>
+        </div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar">TC</div>
+            <div class="agent-info">
+              <h4>T. Chen</h4>
+              <p>Available</p>
+            </div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+
+        <div class="agent-item">
+          <div class="agent-left">
+            <div class="avatar green">AO</div>
+            <div class="agent-info">
+              <h4>A. Osei</h4>
+              <p>Available</p>
+            </div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="center-panel">
+      <div class="alert-banner">
+        <div class="alert-left">
+          <div class="alert-icon"></div>
+          <div>
+            <div class="alert-title">2 EMERGENCY CALLS ACTIVE —</div>
+            <div class="alert-sub">Oldest call: 00:04:13</div>
+          </div>
+        </div>
+
+        <button class="answer-btn">Answer now</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Queued calls <div class="tab-badge" style="background:#5b2e2e;color:#ffb3b3;">6</div></div>
+        <div class="tab">In progress <div class="tab-badge">3</div></div>
+        <div class="tab">Callbacks <div class="tab-badge">2</div></div>
+      </div>
+
+      <div class="table-head">
+        <div>CALLER</div>
+        <div>QUEUE / ZONE</div>
+        <div>JOB NO.</div>
+        <div>PRIO</div>
+      </div>
+
+      <div class="calls">
+        <div class="group-label">■ EMERGENCY</div>
+
+        <div class="call-row red">
+          <div class="caller">
+            <div class="signal"></div>
+            <div class="call-number">+44 7700 900441</div>
+          </div>
+          <div class="queue-zone">Emergency</div>
+          <div class="job-no">INC–00872</div>
+          <div class="priority red">P1</div>
+        </div>
+
+        <div class="call-row red">
+          <div class="caller">
+            <div class="signal"></div>
+            <div class="call-number">+44 7951 123756</div>
+          </div>
+          <div class="queue-zone">Emergency</div>
+          <div class="job-no">—</div>
+          <div class="priority red">P1</div>
+        </div>
+
+        <div class="group-label">QUEUED — MY ZONES</div>
+
+        <div class="call-row">
+          <div class="caller">
+            <div class="signal"></div>
+            <div class="signal blue"></div>
+            <div class="call-number">+44 113 000 5500</div>
+          </div>
+          <div class="queue-zone">Zone 1 — North</div>
+          <div class="job-no">W0–14421</div>
+          <div class="priority red">High</div>
+        </div>
+
+        <div class="call-row yellow">
+          <div class="caller">
+            <div class="signal orange"></div>
+            <div class="call-number">+44 7700 900213</div>
+          </div>
+          <div class="queue-zone">Zone 1 — North</div>
+          <div class="job-no">W0–14406</div>
+          <div class="priority orange">Normal</div>
+        </div>
+
+        <div class="call-row green">
+          <div class="caller">
+            <div class="signal green"></div>
+            <div class="call-number">+44 161 000 4400</div>
+          </div>
+          <div class="queue-zone">Zone 2 — South</div>
+          <div class="job-no">W0–14418</div>
+          <div class="priority blue">Normal</div>
+        </div>
+
+        <div class="call-row gray">
+          <div class="caller">
+            <div class="signal blue"></div>
+            <div class="call-number">+44 7800 556102</div>
+          </div>
+          <div class="queue-zone">Zone 2 — South</div>
+          <div class="job-no">—</div>
+          <div class="priority">Normal</div>
+        </div>
+
+        <div class="group-label">UNASSIGNED ZONES (NO HANDLER SELECTED)</div>
+
+        <div class="call-row gray">
+          <div class="caller">
+            <div class="signal gray"></div>
+            <div class="call-number">+44 1200 0000</div>
+          </div>
+          <div class="queue-zone">Zone 4 — West</div>
+          <div class="job-no">W0–14399</div>
+          <div class="priority">Normal</div>
+        </div>
+      </div>
+
+      <div class="bottom-stats">
+        <div class="stat-box">
+          <div class="stat-value stat-red">2</div>
+          <div class="stat-label">Emergency</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-value stat-orange">1</div>
+          <div class="stat-label">&gt;10 min wait</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-value stat-white">6</div>
+          <div class="stat-label">Queued</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-value stat-white">3</div>
+          <div class="stat-label">In progress</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-value stat-white">4</div>
+          <div class="stat-label">Agents available</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right-panel">
+      <div class="directory-header">
+        <div class="section-title" style="font-size:14px;">CONTACT DIRECTORY</div>
+        <div class="search">Search name or number...</div>
+      </div>
+
+      <div class="contacts">
+        <div class="contact">
+          <div>
+            <h4>David Hargreaves</h4>
+            <p>+44 7700 900441</p>
+            <span>Last contact: today, 09:14</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+
+        <div class="contact">
+          <div>
+            <h4>Northgrid Substations</h4>
+            <p>+44 113 000 5500</p>
+            <span>Last contact: yesterday</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+
+        <div class="contact">
+          <div>
+            <h4>Manchester Depot</h4>
+            <p>+44 161 000 4400</p>
+            <span>Last contact: 3 days ago</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+
+        <div class="contact">
+          <div>
+            <h4>Leeds Control Centre</h4>
+            <p>+44 113 000 7700</p>
+            <span>Last contact: 1 week ago</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+
+        <div class="contact">
+          <div>
+            <h4>Janet Hobbs</h4>
+            <p>+44 7700 900213</p>
+            <span>Last contact: 2 weeks ago</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+
+        <div class="contact">
+          <div>
+            <h4>Sheffield East Depot</h4>
+            <p>+44 114 000 2200</p>
+            <span>Last contact: 1 month ago</span>
+          </div>
+          <button class="dial-btn">□ Dial</button>
+        </div>
+      </div>
+
+      <div class="add-contact">＋ Add contact</div>
+    </aside>
+  </div>
+</body>
+</html>

@@ -1,13 +1,13 @@
 import {
   Box,
-  Button,
   ButtonDropdown,
   Container,
+  Modal,
   PromptInput,
   SpaceBetween,
 } from "@cloudscape-design/components";
 import { useEffect, useState } from "react";
-import { v4 as uuid } from "uuid";
+import { v4 as uuid, v5 as uuidv5 } from "uuid";
 import Markdown from "react-markdown";
 import { DotLoader } from "./assets/DotLoader";
 import { ChatBubble, Avatar } from "@cloudscape-design/chat-components";
@@ -17,9 +17,14 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 import { CONVERSATION_CONSTANTS } from "./constants";
 import { InputProps } from "@cloudscape-design/components";
 import { NonCancelableCustomEvent } from "@cloudscape-design/components/interfaces";
-import langTextData from "./textLang.json";
+import langTextData from "./assets/textLang.json";
 // import ABBLogo from "./assets/ABB_Logo.svg"
-import ABBLogo from "./assets/ABB_Logo.png"
+// import ABBLogo from "./assets/ABB_Logo.png";
+import ABBLogo from "./assets/ABB_Logo.png";
+import GradientButton from "./assets/GradientButton";
+
+import ChatDisclaimer from "./ChatDisclaimer";
+import FillButton from "./assets/FillButton";
 
 export type LLMessage = {
   id: string;
@@ -32,21 +37,16 @@ export type LLMessage = {
   sending?: boolean;
 };
 
+const NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+
 function timestampToDateString(timestamp: number) {
   const d = new Date(timestamp);
-
   const pad = (n: any) => String(n).padStart(2, "0");
-
-  const offsetMinutes = -d.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const hours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
-  const minutes = pad(Math.abs(offsetMinutes) % 60);
-
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(
-    d.getSeconds(),
-  )} GMT${sign}${hours}:${minutes}`;
-  return time;
+  return `${pad(d.getHours() % 12 || 12)}:${pad(d.getMinutes())} ${
+    d.getHours() >= 12 ? "PM" : "AM"
+  }`;
 }
+
 function parseEventData(data: string) {
   const jsonData = JSON.parse(data);
   const entryPayload = JSON.parse(jsonData.conversationEntry.entryPayload);
@@ -95,13 +95,95 @@ function Chat() {
   const [disablePromptInput, setDisablePromptInput] = useState<boolean>(false);
   const [loadingNewChat, setLoadingNewChat] = useState(false);
   const esRef = useRef<EventSource | null>(null);
-
-  const langFormatText =
-    langTextData[language_CODE as keyof typeof langTextData] ??
-    langTextData["en_US"];
+  const [resolvedLanguage, setResolvedLanguage] = useState(false);
 
   const typingTimeoutRef = useRef<number | null>(null);
   const isTypingRef = useRef(false);
+
+  const [initialMessage, setInitialMessage] = useState<LLMessage[]>([]);
+
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  const [closeModal, setCloseModal] = useState<boolean>(false);
+  // const langFormatText =
+  //   langTextData[
+  //     language_CODE.split("_")[0]?.toLowerCase() as keyof typeof langTextData
+  //   ] ?? langTextData["en"];
+
+  const [langFormatText, setLangFormatText] = useState(langTextData["en"]);
+
+  function setInitialMessageSetup(
+    initialTimestamp: number,
+    oneShot: boolean = false,
+  ) {
+    if (!resolvedLanguage) return;
+    let messages_initial: LLMessage[] = langFormatText.startupChatMessages.map(
+      (item, key) => ({
+        id: `initial-message-${key}`,
+        timestamp: initialTimestamp,
+        author: "assistant",
+        content: item,
+        loading: false,
+      }),
+    );
+    // ,
+    //   {
+    //     id: "initial-message-2",
+    //     timestamp: initialTimestamp,
+    //     author: "assistant",
+    //     content:
+    //       "Please state your issue so that we can direct you to the right department",
+    //     loading: false,
+    //   },
+
+    if (oneShot) {
+      setInitialMessage(messages_initial);
+      return;
+    }
+
+    setInitialMessage([]);
+
+    setTimeout(() => {
+      setInitialMessage((prev) => [...prev, messages_initial[0]]);
+    }, 700);
+    setTimeout(() => {
+      setInitialMessage((prev) => [...prev, messages_initial[1]]);
+    }, 2400);
+  }
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      setInitialMessageSetup(messages[0].timestamp, true);
+    } else {
+      setInitialMessage([]);
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_LL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intent: "GetLanguageRenderingText",
+        langIsoCode: language_CODE,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.data) {
+          setLangFormatText(data.data);
+          setResolvedLanguage(true);
+        }
+      });
+  }, []);
+
+  useEffect(() => {
+    console.log(chatState, chatState === "OpenStart");
+
+    if (chatState === "OpenStart") {
+      setShowDisclaimer(true);
+    }
+  }, [chatState]);
 
   const sendTypingEvent = async (
     type:
@@ -166,7 +248,8 @@ function Chat() {
       if (data.success) {
         setDisablePromptInput(false);
         setMessages([]);
-        setChatState("AIChat");
+        // setChatState("AIChat");
+        setChatState("OpenStart");
       }
     } catch (e) {
       console.error("Couldn't end chat session", e);
@@ -243,6 +326,7 @@ function Chat() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+
         let responseText = data.response;
         if (data.fallbackTransfer) {
           responseText = langFormatText.llmTransferToAgentFallbackMessage;
@@ -265,6 +349,10 @@ function Chat() {
           subscribeToTunnel(data);
         } else if (data.intent === "conversation_end") {
           closeAISession();
+        } else {
+          if ([null, "OpenStart"].includes(chatState)) {
+            setChatState("AIChat");
+          }
         }
 
         // if (
@@ -385,7 +473,9 @@ function Chat() {
         id: uuid(),
         timestamp: i.Timestamp + 10,
         author: "assistant",
-        content: i.AgentMessage,
+        content: i.fallbackTransfer
+          ? langFormatText.llmTransferToAgentFallbackMessage
+          : i.AgentMessage,
         sentMessage: true,
       });
     });
@@ -459,7 +549,10 @@ function Chat() {
               author: eventData.actorType == "EndUser" ? "user" : "agent",
               content: eventData.content.staticContent.text,
               sentMessage: true,
-              name: eventData.actorName,
+              name:
+                eventData.actorType == "EndUser"
+                  ? "Customer"
+                  : eventData.actorName,
               // EVENT: CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
               // DATA: eventData,
             };
@@ -474,7 +567,7 @@ function Chat() {
             author: "System",
             content: eventData.content.entries.map(
               (j: any) =>
-                `${j.displayName} has ${
+                `${String(j.displayName).split(" ")[0]} has ${
                   j.operation == "add"
                     ? "joined"
                     : j.operation == "remove"
@@ -492,12 +585,32 @@ function Chat() {
           // };
         }
         if (
+          i.entryType == CONVERSATION_CONSTANTS.EntryTypes.CLOSE_CONVERSATION
+        ) {
+          //
+          if (chatState === "SFChat") {
+            closeSFSession();
+            setChatState("Ended");
+          }
+
+          return {
+            id: uuid(),
+            timestamp: eventData.transcriptedTimestamp,
+            author: "System",
+            content: [langFormatText.sfSessionEndedMessage],
+            sentMessage: true,
+          };
+        }
+        if (
           i.entryType == CONVERSATION_CONSTANTS.EntryTypes.SESSION_STATE_CHANGED
         ) {
           //
           if (eventData.content.sessionStatus == "Ended") {
-            // closeSFSession();
-            setChatState("Ended");
+            if (chatState === "SFChat") {
+              closeSFSession();
+              setChatState("Ended");
+            }
+
             return {
               id: uuid(),
               timestamp: eventData.transcriptedTimestamp,
@@ -523,7 +636,10 @@ function Chat() {
               timestamp: eventData.transcriptedTimestamp,
               author: eventData.actorType,
               content: [eventData.content.failureReason],
-              name: eventData.actorName,
+              name:
+                eventData.actorType == "EndUser"
+                  ? "Customer"
+                  : eventData.actorName,
             };
           }
         }
@@ -602,6 +718,15 @@ function Chat() {
         ) {
           // console.log("adding to list");
 
+          if (
+            uuidv5(
+              `first-salesforce-message-${eventData.conversationId}`,
+              NAMESPACE_DNS,
+            ) == eventData.messageId
+          ) {
+            return;
+          }
+
           if (eventData.actorType === "EndUser") {
             const clientMessageId = eventData.messageId; // whatever field your backend echoes it back as
 
@@ -615,7 +740,10 @@ function Chat() {
                     timestamp: eventData.transcriptedTimestamp,
                     author: eventData.actorType == "EndUser" ? "user" : "agent",
                     content: eventData.content.staticContent.text,
-                    name: eventData.actorName,
+                    name:
+                      eventData.actorType == "EndUser"
+                        ? "Customer"
+                        : eventData.actorName,
                   },
                   // {
                   //   EVENT:
@@ -630,28 +758,45 @@ function Chat() {
                 author: "user",
                 content: eventData.content.staticContent.text,
                 sentMessage: true,
+                name:
+                  eventData.actorType == "EndUser"
+                    ? "Customer"
+                    : eventData.actorName,
                 sending: false,
               };
               return updated;
             });
             return;
           }
-
-          // setMessages((prev) => [
-          //   ...prev,
-          //   {
-          //     id: eventData.messageId,
+          // return {
+          //     id: uuid(),
           //     timestamp: eventData.transcriptedTimestamp,
           //     author: eventData.actorType == "EndUser" ? "user" : "agent",
           //     content: eventData.content.staticContent.text,
-          //     name: eventData.actorName,
-          //   },
-          //   // {
-          //   //   EVENT:
-          //   //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
-          //   //   DATA: eventData,
-          //   // },
-          // ]);
+          //     sentMessage: true,
+          //     name: eventData.actorType == "EndUser" ? "Customer" : eventData.actorName,
+          //     // EVENT: CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+          //     // DATA: eventData,
+          //   };
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: eventData.messageId,
+              timestamp: eventData.transcriptedTimestamp,
+              author: eventData.actorType == "EndUser" ? "user" : "agent",
+              content: eventData.content.staticContent.text,
+              name:
+                eventData.actorType == "EndUser"
+                  ? "Customer"
+                  : eventData.actorName,
+            },
+            // {
+            //   EVENT:
+            //     CONVERSATION_CONSTANTS.EventTypes.CONVERSATION_MESSAGE,
+            //   DATA: eventData,
+            // },
+          ]);
         }
       },
     );
@@ -678,7 +823,10 @@ function Chat() {
               timestamp: eventData.transcriptedTimestamp,
               author: eventData.actorType,
               content: [eventData.content.failureReason],
-              name: eventData.actorName,
+              name:
+                eventData.actorType == "EndUser"
+                  ? "Customer"
+                  : eventData.actorName,
             },
             // {
             //   EVENT:
@@ -703,7 +851,7 @@ function Chat() {
             author: "System",
             content: eventData.content.entries.map(
               (j: any) =>
-                `${j.displayName} has ${
+                `${String(j.displayName).split(" ")[0]} has ${
                   j.operation == "add"
                     ? "joined"
                     : j.operation == "remove"
@@ -733,8 +881,20 @@ function Chat() {
         const eventData = parseEventData(e.data);
         if (eventData) {
           // setSessionStatus(eventData.content.sessionStatus);
-          // closeSFSession();
-          setChatState("Ended");
+          if (chatState != "Ended") {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uuid(),
+                timestamp: eventData.transcriptedTimestamp,
+                author: "System",
+                content: [langFormatText.sfSessionEndedMessage],
+                sentMessage: true,
+              },
+            ]);
+            closeSFSession();
+            setChatState("Ended");
+          }
         }
       },
     );
@@ -749,6 +909,7 @@ function Chat() {
           esRef.current?.close(); // ✅ Add this
           esRef.current = null;
           setChatState("Ended");
+          closeSFSession();
           setMessages((prev) => [
             ...prev,
             {
@@ -808,16 +969,30 @@ function Chat() {
     };
 
     es.onerror = async () => {
-      console.log("Disconnected for some reasson");
-
+      console.log("SSE disconnected");
       es.close();
       esRef.current = null;
-      await refreshSFToken();
+
+      let attempt = 0;
+      while (true) {
+        const delay = Math.min(1000 * 2 ** attempt, 7500); // cap at 30s
+        await new Promise((res) => setTimeout(res, delay));
+        try {
+          await refreshSFToken();
+          break;
+        } catch (err) {
+          console.error(
+            `Reconnect attempt ${attempt + 1} failed, retrying...`,
+            err,
+          );
+          attempt++;
+        }
+      }
     };
   };
 
   const refreshSFToken = async () => {
-    if (chatState !== "SFChat") return;
+    if (chatStateRef.current !== "SFChat") return; // <-- fix stale closure
     const res = await fetch(import.meta.env.VITE_SF_API, {
       method: "POST",
       credentials: "include",
@@ -847,7 +1022,7 @@ function Chat() {
         //   return;
         // }
         if (data.state === "NOT_CONNECTED") {
-          setChatState("AIChat"); // 👈 just start fresh
+          setChatState("OpenStart"); // 👈 just start fresh
           return;
         }
 
@@ -920,101 +1095,201 @@ function Chat() {
     return () => clearInterval(interval);
   }, []);
 
+  const onChatCloseButton = () => {
+    setCloseModal(true);
+  };
+
+  const onModalDismiss = () => {
+    setCloseModal(false);
+  };
+
+  const closeChatWindowTrigger = () => {
+    setCloseModal(false);
+    if (chatState == "OpenStart") {
+      setShowDisclaimer(true);
+    }
+    const messageData = {
+      type: "GCC_CHATWINDOW",
+      payload: { intent: "CloseWindow" },
+    };
+    window.parent.postMessage(messageData, "*");
+  };
+
   return (
-    <div
-      style={{
-        height: "100vh",
-      }}
-    >
-      <div style={{ height: "100%" }}>
-        <div
-          style={{ display: "flex", flexDirection: "column", height: "100%" }}
-        >
-          <Container
-            // header={<Header variant="h1">Chatbot Aggregator-Test Interface</Header>}
-            style={{ root: { borderWidth: "0px" } }}
-            fitHeight
-            className="containerComponent"
-            disableContentPaddings
-            header={
-              <div className="chat_header">
-                <div>
-                  <ButtonDropdown
-                    variant="icon"
-                    items={[
-                      {
-                        id: "end_chat",
-                        text: langFormatText.uiEndChatBtnText,
-                        iconName: "close",
-                        disabled:
-                          !["AIChat", "SFChat"].includes(chatState ?? "") ||
-                          messages.length == 0,
-                      },
-                      {
-                        id: "download_transcript",
-                        text: langFormatText.uiDownloadTranscriptBtnText,
-                        iconName: "download",
-                        disabled: true,
-                      },
-                    ]}
-                    onItemClick={({ detail }) => {
-                      if (detail.id === "end_chat")
-                        chatState === "AIChat"
-                          ? closeAISession()
-                          : closeSFSession();
-                      if (detail.id === "download_transcript") {
-                        // handleDownloadTranscript();
-                      }
-                    }}
-                  />
-                  <img src={ABBLogo} />
-                  <h2>{langFormatText.uiChatTitle}</h2>
-                  <h2 style={{ color: "#00000073", fontWeight: 500 }}>
-                    ({import.meta.env.VITE_CHAT_APP_BRANCH})
-                  </h2>
-                </div>
-              </div>
-            }
-            footer={
-              <SpaceBetween size="s">
-                {chatState === "Ended" ? (
-                  <div style={{ textAlign: "center" }}>
-                    <Button onClick={handleNewChat} loading={loadingNewChat}>
-                      {langFormatText.uiStartNewChatBnText}
-                    </Button>
-                  </div>
-                ) : (
-                  <PromptInput
-                    value={promptVal}
-                    onChange={handleInputChange}
-                    onAction={onMessage}
-                    placeholder={langFormatText.uiTypeMessageInputText}
-                    actionButtonIconName="send"
-                    ariaLabel={langFormatText.uiTypeMessageInputText}
-                    disableActionButton={
-                      loading || [null, "Ended"].includes(chatState)
-                    }
-                    disabled={!chatState || disablePromptInput}
-                    maxRows={8}
-                    minRows={3}
-                  />
-                )}
-              </SpaceBetween>
-            }
+    <>
+      {showDisclaimer ? (
+        <ChatDisclaimer
+          disclaimerTextFields={langFormatText.disclaimerTextFields}
+          onAccept={() => {
+            setShowDisclaimer(false);
+            setInitialMessageSetup(Date.now());
+          }}
+          onDeny={closeChatWindowTrigger}
+        />
+      ) : (
+        ""
+      )}
+
+      <div
+        style={{
+          height: "100vh",
+        }}
+      >
+        <div style={{ height: "100%" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", height: "100%" }}
           >
-            <Box padding="m">
-              <SpaceBetween size="s">
-                <div className="message-containers">
-                  <SpaceBetween size="s">
-                    <div
-                      ref={scrollDiv}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
+            <Container
+              // header={<Header variant="h1">Chatbot Aggregator-Test Interface</Header>}
+              style={{ root: { borderWidth: "0px" } }}
+              fitHeight
+              className="containerComponent"
+              disableContentPaddings
+              header={
+                <div className="chat_header">
+                  <div className="title">
+                    <ButtonDropdown
+                      className="dropdown-menu"
+                      variant="icon"
+                      items={[
+                        {
+                          id: "end_chat",
+                          text: langFormatText.uiEndChatBtnText,
+                          iconName: "close",
+                          disabled: [null, "OpenStart", "Ended"].includes(
+                            chatState,
+                          ),
+                          // || messages.length == 0,
+                        },
+                        {
+                          id: "download_transcript",
+                          text: langFormatText.uiDownloadTranscriptBtnText,
+                          iconName: "download",
+                          disabled: true,
+                        },
+                      ]}
+                      onItemClick={({ detail }) => {
+                        if (detail.id === "end_chat")
+                          chatState === "SFChat"
+                            ? closeSFSession()
+                            : closeAISession();
+                        if (detail.id === "download_transcript") {
+                          // handleDownloadTranscript();
+                        }
                       }}
+                    />
+                    <img src={ABBLogo} />
+                    <h2>{langFormatText.uiChatTitle}</h2>
+                    <h2 style={{ color: "#00000073", fontWeight: 500 }}>
+                      ({import.meta.env.VITE_CHAT_APP_BRANCH})
+                    </h2>
+                  </div>
+                  <Modal
+                    onDismiss={onModalDismiss}
+                    visible={closeModal}
+                    className="change-modal-close-icon"
+                    footer={
+                      <Box float="right">
+                        <SpaceBetween direction="horizontal" size="xs">
+                          <GradientButton onClick={onModalDismiss}>
+                            {langFormatText.closeChatTextFields.cancel}
+                          </GradientButton>
+                          <FillButton
+                            variant="primary"
+                            onClick={closeChatWindowTrigger}
+                          >
+                            {langFormatText.closeChatTextFields.ok}
+                          </FillButton>
+                        </SpaceBetween>
+                      </Box>
+                    }
+                    header={langFormatText.closeChatTextFields.title}
+                  >
+                    {langFormatText.closeChatTextFields.body}
+                  </Modal>
+                  <div
+                    role="button"
+                    id="custom-chat-modal-close"
+                    onClick={onChatCloseButton}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      {/* <SpaceBetween
+                      <path d="M4.71969 18.2182C4.42679 18.511 4.42677 18.9859 4.71965 19.2788C5.01253 19.5717 5.4874 19.5717 5.78031 19.2789L11.9993 13.0604L18.2197 19.2803C18.5126 19.5732 18.9875 19.5732 19.2804 19.2803C19.5732 18.9874 19.5732 18.5125 19.2803 18.2196L13.0609 12.0007L19.2803 5.78169C19.5732 5.48881 19.5732 5.01394 19.2804 4.72103C18.9875 4.42813 18.5126 4.42811 18.2197 4.72099L12.0007 10.9395L5.78031 4.71953C5.4874 4.42665 5.01253 4.42666 4.71965 4.71957C4.42677 5.01247 4.42679 5.48735 4.71969 5.78023L10.9391 11.9992L4.71969 18.2182Z" />
+                    </svg>
+                  </div>
+                </div>
+              }
+              footer={
+                <SpaceBetween className="footer-div" size="s">
+                  {chatState === "Ended" ? (
+                    <div style={{ textAlign: "center" }}>
+                      <GradientButton
+                        onClick={handleNewChat}
+                        loading={loadingNewChat}
+                      >
+                        {langFormatText.uiStartNewChatBnText}
+                      </GradientButton>
+                      {/* <Button className="endchat-btn" onClick={handleNewChat} loading={loadingNewChat}>
+                      {langFormatText.uiStartNewChatBnText}
+                    </Button> */}
+                    </div>
+                  ) : (
+                    <PromptInput
+                      style={{
+                        root: {
+                          color: {
+                            disabled: "#9E9E9E",
+                            default: "#696969",
+                            focus: "#1F1F1F",
+                          },
+                          borderColor: {
+                            disabled: "#DBDBDB",
+                            default: "#000",
+                            focus: "#615EEF",
+                          },
+                          backgroundColor: {
+                            disabled: "#fff",
+                          },
+                        },
+                        placeholder: {
+                          fontStyle: "normal",
+                        },
+                      }}
+                      value={promptVal}
+                      onChange={handleInputChange}
+                      onAction={onMessage}
+                      placeholder={langFormatText.uiTypeMessageInputText}
+                      actionButtonIconName="send"
+                      ariaLabel={langFormatText.uiTypeMessageInputText}
+                      disableActionButton={
+                        loading || [null, "Ended"].includes(chatState)
+                      }
+                      disabled={!chatState || disablePromptInput}
+                      maxRows={8}
+                      minRows={3}
+                    />
+                  )}
+                </SpaceBetween>
+              }
+            >
+              <Box padding="m">
+                <SpaceBetween size="s">
+                  <div className="message-containers">
+                    <SpaceBetween size="s">
+                      <div
+                        ref={scrollDiv}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
+                        {/* <SpaceBetween
                         size="xs"
                         className="chat-message"
                         // alignItems={
@@ -1038,151 +1313,157 @@ function Chat() {
                         </SpaceBetween>
                       </SpaceBetween> */}
 
-                      {messages.map((message) => (
-                        <SpaceBetween
-                          key={message.id}
-                          size="xs"
-                          className="chat-message"
-                          alignItems={
-                            message.author === "assistant" ||
-                            message.author === "agent"
-                              ? "start"
-                              : message.author === "user"
-                              ? "end"
-                              : "center"
-                          }
-                        >
-                          {message.author === "System" ? (
-                            <SpaceBetween size="xs" alignItems={"center"}>
-                              <Box color="text-body-secondary">
-                                {Array.isArray(message.content)
-                                  ? message.content.map((i: string) => (
-                                      <p>
-                                        <small>
-                                          {i}{" "}
-                                          {message.name === "Automated Process"
-                                            ? ""
-                                            : timestampToDateString(
-                                                message.timestamp,
-                                              )}
-                                        </small>
-                                      </p>
-                                    ))
-                                  : message.content}
-                              </Box>
-                            </SpaceBetween>
-                          ) : (
-                            <SpaceBetween size="xxs">
-                              <ChatBubble
-                                avatar={
-                                  <ChatBubbleAvatar
-                                    loading={message.loading ? true : false}
-                                    author={
-                                      message.name ||
-                                      langFormatText.translateUserTitle[
-                                        message.author
-                                      ]
-                                    }
-                                    role={message.author}
-                                    translateUserTitleRef={
-                                      langFormatText.translateUserTitle
-                                    }
-                                  />
-                                }
-                                ariaLabel={`message-${message.author}`}
-                                type={
-                                  message.author === "assistant" ||
-                                  message.author === "agent"
-                                    ? "incoming"
-                                    : "outgoing"
-                                }
-                              >
-                                {message.loading ? (
-                                  <LoadingMessage
-                                    loadingMsg={langFormatText.loadingMsgText}
-                                  />
-                                ) : (
-                                  <div
-                                    className="markdownContainerDiv"
-                                    style={{
-                                      display: "flex",
-                                      gap: 10,
-                                      flexDirection: "column",
-                                      whiteSpace: "pre-wrap",
-                                    }}
-                                  >
-                                    <Markdown
-                                      components={{
-                                        a: ({ href, children }) => (
-                                          <a
-                                            href={href}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          >
-                                            {children}
-                                          </a>
-                                        ),
-                                      }}
-                                    >
-                                      {Array.isArray(message.content)
-                                        ? message.content.join("\n")
-                                        : message.content ?? ""}
-                                    </Markdown>
-                                  </div>
-                                )}
-                              </ChatBubble>
-                              {!message.loading && (
-                                <Box
-                                  textAlign={
-                                    message.author === "user" ? "right" : "left"
+                        {[...initialMessage, ...messages].map((message) => (
+                          <SpaceBetween
+                            key={message.id}
+                            size="xs"
+                            className="chat-message"
+                            alignItems={
+                              message.author === "assistant" ||
+                              message.author === "agent"
+                                ? "start"
+                                : message.author === "user"
+                                ? "end"
+                                : "center"
+                            }
+                          >
+                            {message.author === "System" ? (
+                              <SpaceBetween size="xs" alignItems={"center"}>
+                                <Box color="text-body-secondary">
+                                  {Array.isArray(message.content)
+                                    ? message.content.map((i: string) => (
+                                        <p>
+                                          <small>
+                                            {i}{" "}
+                                            {message.name ===
+                                            "Automated Process"
+                                              ? ""
+                                              : timestampToDateString(
+                                                  message.timestamp,
+                                                )}
+                                          </small>
+                                        </p>
+                                      ))
+                                    : message.content}
+                                </Box>
+                              </SpaceBetween>
+                            ) : (
+                              <SpaceBetween size="xxs">
+                                <ChatBubble
+                                  avatar={
+                                    <ChatBubbleAvatar
+                                      loading={message.loading ? true : false}
+                                      author={
+                                        message.name ||
+                                        langFormatText.translateUserTitle[
+                                          message.author
+                                        ]
+                                      }
+                                      role={message.author}
+                                      translateUserTitleRef={
+                                        langFormatText.translateUserTitle
+                                      }
+                                    />
+                                  }
+                                  ariaLabel={`message-${message.author}`}
+                                  type={
+                                    message.author === "assistant" ||
+                                    message.author === "agent"
+                                      ? "incoming"
+                                      : "outgoing"
                                   }
                                 >
-                                  <MessageTimestamp
-                                    timestamp={message.timestamp}
-                                    sending={message.sending}
-                                  />
-                                </Box>
-                              )}
-                            </SpaceBetween>
-                          )}
-                        </SpaceBetween>
-                      ))}
+                                  {message.loading ? (
+                                    <LoadingMessage
+                                      loadingMsg={langFormatText.loadingMsgText}
+                                    />
+                                  ) : (
+                                    <div
+                                      className="markdownContainerDiv"
+                                      style={{
+                                        display: "flex",
+                                        gap: 10,
+                                        flexDirection: "column",
+                                        whiteSpace: "pre-wrap",
+                                      }}
+                                    >
+                                      <Markdown
+                                        components={{
+                                          a: ({ href, children }) => (
+                                            <a
+                                              href={href}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                            >
+                                              {children}
+                                            </a>
+                                          ),
+                                        }}
+                                      >
+                                        {Array.isArray(message.content)
+                                          ? message.content.join("\n")
+                                          : message.content ?? ""}
+                                      </Markdown>
+                                    </div>
+                                  )}
+                                </ChatBubble>
+                                {!message.loading && (
+                                  <Box
+                                    textAlign={
+                                      message.author === "user"
+                                        ? "right"
+                                        : "left"
+                                    }
+                                  >
+                                    <MessageTimestamp
+                                      timestamp={message.timestamp}
+                                      sending={message.sending}
+                                    />
+                                  </Box>
+                                )}
+                              </SpaceBetween>
+                            )}
+                          </SpaceBetween>
+                        ))}
 
-                      {isAgentTyping ? (
-                        <SpaceBetween
-                          size="xs"
-                          className="chat-message"
-                          alignItems={"start"}
-                        >
-                          <ChatBubble
-                            avatar={
-                              <ChatBubbleAvatar
-                                author={langFormatText.translateUserTitle.agent}
-                                role={"agent"}
-                                loading={true}
-                                translateUserTitleRef={
-                                  langFormatText.translateUserTitle
-                                }
-                              />
-                            }
-                            ariaLabel={`message-agent`}
-                            type={"incoming"}
+                        {isAgentTyping ? (
+                          <SpaceBetween
+                            size="xs"
+                            className="chat-message"
+                            alignItems={"start"}
                           >
-                            <DotLoader />
-                          </ChatBubble>
-                        </SpaceBetween>
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </SpaceBetween>
-                </div>
-              </SpaceBetween>
-            </Box>
-          </Container>
+                            <ChatBubble
+                              avatar={
+                                <ChatBubbleAvatar
+                                  author={
+                                    langFormatText.translateUserTitle.agent
+                                  }
+                                  role={"agent"}
+                                  loading={true}
+                                  translateUserTitleRef={
+                                    langFormatText.translateUserTitle
+                                  }
+                                />
+                              }
+                              ariaLabel={`message-agent`}
+                              type={"incoming"}
+                            >
+                              <DotLoader />
+                            </ChatBubble>
+                          </SpaceBetween>
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                    </SpaceBetween>
+                  </div>
+                </SpaceBetween>
+              </Box>
+            </Container>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1219,17 +1500,22 @@ function ChatBubbleAvatar({
   }
 
   const initials = (author ? author : translateUserTitleRef.user)
-    .trim()
-    .split(" ")
-    .map((i) => i[0])
-    .join("")
-    .toUpperCase();
+    .trim()[0]
+    ?.toUpperCase();
 
   return (
     <Avatar
       initials={initials}
-      tooltipText={capitalizeFirstLetter(author || translateUserTitleRef.user)}
-      ariaLabel={capitalizeFirstLetter(author || translateUserTitleRef.user)}
+      tooltipText={capitalizeFirstLetter(
+        author === "Automated Process"
+          ? "Automated Process"
+          : author?.split(" ")[0] || translateUserTitleRef.user,
+      )}
+      ariaLabel={capitalizeFirstLetter(
+        author === "Automated Process"
+          ? "Automated Process"
+          : author?.split(" ")[0] || translateUserTitleRef.user,
+      )}
     />
   );
 }
@@ -1244,14 +1530,18 @@ function MessageTimestamp({
   const date = new Date(timestamp);
   const pad = (n: number) => String(n).padStart(2, "0");
 
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const hours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
-  const minutes = pad(Math.abs(offsetMinutes) % 60);
+  // const offsetMinutes = -date.getTimezoneOffset();
+  // const sign = offsetMinutes >= 0 ? "+" : "-";
+  // const hours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
+  // const minutes = pad(Math.abs(offsetMinutes) % 60);
 
-  const time = `${pad(date.getHours())}:${pad(
-    date.getMinutes(),
-  )} GMT${sign}${hours}:${minutes}`;
+  // const time = `${pad(date.getHours())}:${pad(
+  //   date.getMinutes(),
+  // )} GMT${sign}${hours}:${minutes}`;
+
+  const time = `${pad(date.getHours() % 12 || 12)}:${pad(date.getMinutes())} ${
+    date.getHours() >= 12 ? "PM" : "AM"
+  }`;
 
   return (
     <Box color="text-body-secondary">

@@ -1,10 +1,10 @@
-import { createContext, useState } from "react";
+import { createContext } from "react";
 // import ChatInterface from "./ChatInterface";
 import "./App.css";
 // import { capitalize } from "./assets/functions"
 // import ChatShell from "./ChatShell";
 import Chat from "./Chat";
-import ChatDisclaimer from "./ChatDisclaimer";
+// import ChatDisclaimer from "./ChatDisclaimer";
 // import SalesForceChat from "./SalesForceChat";
 
 export const AppContext = createContext<any>({});
@@ -13,7 +13,7 @@ export const AppContext = createContext<any>({});
 
 function App() {
   const queryParams = new URLSearchParams(window.location.search);
-  const [accepted, setAccepted] = useState(false);
+  // const [accepted, setAccepted] = useState(false);
 
   const language = queryParams.get("language");
   const email = queryParams.get("email");
@@ -23,7 +23,7 @@ function App() {
       <AppContext.Provider value={{ language, email, displayName }}>
         {/* <SalesForceChat prevMessages={[]} /> */}
         {/* <ChatInterface /> */}
-        {!accepted && <ChatDisclaimer onAccept={() => {setAccepted(true)}} />}
+        {/* {!accepted && <ChatDisclaimer onAccept={() => {setAccepted(true)}} />} */}
         {/* {accepted && <Chat />} */}
 
         <Chat />

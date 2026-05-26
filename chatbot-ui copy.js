@@ -1,34 +1,12 @@
-const translations = {
-  en: "Chat with us...",
-  es: "Chatea con nosotros...",
-  es_MX: "Chatea con nosotros...",
-  fr: "Chattez avec nous...",
-  de: "Chatten Sie mit uns...",
-  it: "Chatta con noi...",
-  nl: "Chat met ons...",
-  pt: "Converse conosco...",
-  sv: "Chatta med oss...",
-  da: "Chat med os...",
-  no: "Chat med oss...",
-  fi: "Keskustele kanssamme...",
-  pl: "Porozmawiaj z nami na czacie...",
-  cs: "Chatujte s námi...",
-  sk: "Chatujte s nami...",
-  ru: "Напишите нам в чат...",
-  tr: "Bizimle sohbet edin...",
-  ko: "저희와 채팅하세요...",
-  ja: "チャットでお問い合わせください...",
-  zh_TW: "與我們即時聊天...",
-  zh_CN: "与我们在线聊天...",
-  in: "Chat dengan kami...",
-};
-
-function getPlaceholder(langIsoCode) {
-  const prefix = langIsoCode?.split("_")[0];
-  return (
-    translations[langIsoCode] ?? translations[prefix] ?? translations["en"]
-  );
-}
+// window.onload = () => {
+//     const onlineBtn = document.querySelector('div.rectangle-button[id^="liveagent_button_online_"]')
+//     if (onlineBtn) {
+//         onlineBtn.addEventListener('click', () => {
+//             const url = "http://localhost:5173/?language=eu&displayName=adith.%20%20%20Manu";
+//             window.open(url, "LiveChat", "width=485,height=450,resizable=yes,scrollbars=yes");
+//         })
+//     }
+// }
 
 const injectedCSS = `
 #custom-chat-launcher {
@@ -140,17 +118,13 @@ const injectedCSS = `
 // }
 
 function injectChatInterface() {
-  const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
-  const country = window.CHAT_SESSION_COUNTRY || "US";
-  // const iframeUrl = `http://localhost:5173?lang=${lang}&country=${country}`;
-  const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
   window.addEventListener(
     "message",
     function (event) {
       // console.log("Received from child:", event.data);
 
       if (event.data.type === "GCC_CHATWINDOW") {
-        console.log("The child iframe says: ", event.data.payload);
+        console.log("The child iframe says: " ,event.data.payload);
         if (event.data.payload.intent === "CloseWindow") {
           modal.classList.remove("active");
           modal.style.display = "none";
@@ -169,7 +143,7 @@ function injectChatInterface() {
   launcher.id = "custom-chat-launcher";
   launcher.innerHTML = `
 <div style='width: 100%; display: flex; justify-content: space-between;align-items: center;'>
-    <span>${getPlaceholder(lang)}</span>
+    <span>Talk to us...</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chat-dots" viewBox="0 0 16 16">
         <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0m4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
         <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9 9 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.4 10.4 0 0 1-.524 2.318l-.003.011a11 11 0 0 1-.244.637c-.079.186.074.394.273.362a22 22 0 0 0 .693-.125m.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6-3.004 6-7 6a8 8 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a11 11 0 0 0 .398-2"/>
@@ -180,6 +154,10 @@ function injectChatInterface() {
 
   const modal = document.createElement("div");
   modal.id = "custom-chat-modal";
+  const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
+  const country = window.CHAT_SESSION_COUNTRY || "US";
+  const iframeUrl = `http://localhost:5173?lang=${lang}&country=${country}`;
+  // const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
   modal.innerHTML = `
 <div id="custom-chat-modal-content">
     
@@ -190,6 +168,14 @@ function injectChatInterface() {
     <iframe id="custom-chat-iframe" src="${iframeUrl}"></iframe>
 </div>
 `;
+
+  // <div style='line-height: 38px;' id="custom-chat-modal-close">
+
+  //   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  //     <path d="M4.71969 18.2182C4.42679 18.511 4.42677 18.9859 4.71965 19.2788C5.01253 19.5717 5.4874 19.5717 5.78031 19.2789L11.9993 13.0604L18.2197 19.2803C18.5126 19.5732 18.9875 19.5732 19.2804 19.2803C19.5732 18.9874 19.5732 18.5125 19.2803 18.2196L13.0609 12.0007L19.2803 5.78169C19.5732 5.48881 19.5732 5.01394 19.2804 4.72103C18.9875 4.42813 18.5126 4.42811 18.2197 4.72099L12.0007 10.9395L5.78031 4.71953C5.4874 4.42665 5.01253 4.42666 4.71965 4.71957C4.42677 5.01247 4.42679 5.48735 4.71969 5.78023L10.9391 11.9992L4.71969 18.2182Z" />
+  //   </svg>
+
+  // </div>
   document.body.appendChild(modal);
 
   launcher.addEventListener("click", () => {
