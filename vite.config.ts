@@ -5,13 +5,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   let API_URL;
   if (env.VITE_CHAT_APP_BRANCH === "DEV") {
-    API_URL = "https://dg3aic71lh9nz.cloudfront.net";
+    API_URL = "https://www.dev.gccchat.abb.com";
   } else if (env.VITE_CHAT_APP_BRANCH === "TEST") {
-    API_URL = "https://d3kg6m1lbsayn8.cloudfront.net";
+    API_URL = "https://www.test.gccchat.abb.com";
   }
   // (env.VITE_CHAT_APP_BRANCH === "STAGE")
   else {
-    API_URL = "https://d19bupr2o85mtq.cloudfront.net";
+    API_URL = "https://www.stage.gccchat.abb.com";
   }
   return {
     plugins: [react()],

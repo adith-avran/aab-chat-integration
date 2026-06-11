@@ -140,9 +140,12 @@ const injectedCSS = `
 // }
 
 function injectChatInterface() {
+  // const iframeUrl = `http://localhost:5173?lang=${lang}&country=${country}`;
+  // const lang = window.CHAT_SESSION_LANGUAGE;
+  // const country = window.CHAT_SESSION_COUNTRY;
+  // const iframeUrl = `https://www.gccchat.abb.com?lang=${lang}&country=${country}`;
   const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
   const country = window.CHAT_SESSION_COUNTRY || "US";
-  // const iframeUrl = `http://localhost:5173?lang=${lang}&country=${country}`;
   const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
   window.addEventListener(
     "message",

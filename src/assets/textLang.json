@@ -10,6 +10,11 @@
     "uiStartNewChatBnText": "Start New Chat",
     "uiTypeMessageInputText": "Type a message",
     "loadingMsgText": "Generating a response",
+    "participantAction": {
+      "participantJoined": "{name} has joined",
+      "participantLeft": "{name} has left"
+    },
+    "noAgentsAvailableMessage": "Sorry, we're unable to connect you to an agent right now. You can reach us directly:",
     "translateUserTitle": {
       "user": "Customer",
       "agent": "Agent",
@@ -32,8 +37,8 @@
       "note": "Note: I am powered by AI. Before using AI results, verify accuracy and completeness"
     },
     "startupChatMessages": [
-      "Hi!",
-      "Please state your issue so that we can direct you to the right department"
+      "Hi! I am a virtual assistant",
+      "Thank you for reaching out. Please describe your issue briefly, and we'll direct you to the appropriate department."
     ]
   }
 }
