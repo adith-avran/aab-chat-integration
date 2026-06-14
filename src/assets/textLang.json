@@ -1,8 +1,8 @@
 {
   "en": {
     "llmResponsePharsingErrorMessage": "Something went wrong. Please try again.",
-    "llmSendMessageError": "Message failed to send. Please try again.",
-    "llmTransferToAgentFallbackMessage": "Sorry, something went wrong. Let me transfer you to the next available agent",
+    "llmSendMessageError": "Sorry, there was a technical error. Please try again.",
+    "llmTransferToAgentFallbackMessage": "Let me transfer you to the next available agent",
     "sfSessionEndedMessage": "This session has ended",
     "uiEndChatBtnText": "End Chat",
     "uiDownloadTranscriptBtnText": "Download Transcript",
@@ -10,11 +10,8 @@
     "uiStartNewChatBnText": "Start New Chat",
     "uiTypeMessageInputText": "Type a message",
     "loadingMsgText": "Generating a response",
-    "participantAction": {
-      "participantJoined": "{name} has joined",
-      "participantLeft": "{name} has left"
-    },
     "noAgentsAvailableMessage": "Sorry, we're unable to connect you to an agent right now. You can reach us directly:",
+    "participantAction": { "participantJoined": "{name} has joined", "participantLeft": "{name} has left" },
     "translateUserTitle": {
       "user": "Customer",
       "agent": "Agent",
@@ -23,7 +20,7 @@
     },
     "closeChatTextFields": {
       "title": "Are you sure you want to exit the chat?",
-      "body": "The window will be minimized and your session will be saved automatically. You may resume at any time within the next 2 hours. To end the session, please click End Chat from the menu dropdown",
+      "body": "The window will be minimized and your session will be saved automatically. You may resume at any time within the next 45 minutes. To end the session, please click End Chat from the menu dropdown",
       "ok": "Ok",
       "cancel": "Cancel"
     },
@@ -32,13 +29,13 @@
       "continue": "Continue",
       "title": "Welcome To ABB Chatbot",
       "header": "Before you begin",
-      "gdprConscent": "By chatting, you agree this chat may be monitored, recorded, and used for personalization, analytics, and other business services per our Privacy Statement.",
+      "gdprConscent": "By using this chat, you acknowledge that your interactions may be monitored and recorded for security, quality assurance, and service improvement purposes. Personal data may be processed in accordance with our [Privacy Statement](https://www.abb.com/global/en/company/privacy-notice/external-stakeholders).",
       "marketingConscent": "I consent to receive offers and news on products, services and events from ABB in accordance with ABB's Privacy Policy",
       "note": "Note: I am powered by AI. Before using AI results, verify accuracy and completeness"
     },
     "startupChatMessages": [
       "Hi! I am a virtual assistant",
-      "Thank you for reaching out. Please describe your issue briefly, and we'll direct you to the appropriate department."
+      "Please describe your request in detail and we will support you"
     ]
   }
 }

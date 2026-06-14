@@ -6,6 +6,7 @@ import Alert from "@cloudscape-design/components/alert";
 import { Checkbox } from "@cloudscape-design/components";
 import FillButton from "./assets/FillButton";
 import GradientButton from "./assets/GradientButton";
+import Markdown from "react-markdown";
 
 // const DISCLAIMER_KEY = "chat_disclaimer_accepted";
 
@@ -23,7 +24,8 @@ export default function ChatDisclaimer({
     note: string;
     title: string;
   };
-  onAccept: () => void;
+  // onAccept: () => void;
+  onAccept: (marketingConsent: boolean) => void;
   onDeny: () => void;
 }) {
   const [visible, setVisible] = useState(true);
@@ -32,7 +34,7 @@ export default function ChatDisclaimer({
 
   const handleAccept = () => {
     setVisible(false);
-    onAccept();
+    onAccept(q2Check);
   };
   const handleDeny = () => {
     setVisible(true);
@@ -86,13 +88,35 @@ export default function ChatDisclaimer({
               onChange={({ detail }) => setQ1Check(detail.checked)}
               checked={q1Check}
             >
-              {disclaimerTextFields.gdprConscent}
+              <Markdown
+                components={{
+                  a: ({ href, children }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer">
+                      {children}
+                    </a>
+                  ),
+                  p: ({ children }) => <span>{children}</span>, // ← prevents block-level <p> inside <Alert>
+                }}
+              >
+                {disclaimerTextFields.gdprConscent}
+              </Markdown>
             </Checkbox>
             <Checkbox
               onChange={({ detail }) => setQ2Check(detail.checked)}
               checked={q2Check}
             >
-              {disclaimerTextFields.marketingConscent}
+              <Markdown
+                components={{
+                  a: ({ href, children }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer">
+                      {children}
+                    </a>
+                  ),
+                  p: ({ children }) => <span>{children}</span>, // ← prevents block-level <p> inside <Alert>
+                }}
+              >
+                {disclaimerTextFields.marketingConscent}
+              </Markdown>
             </Checkbox>
           </SpaceBetween>
           <SpaceBetween size="xs">

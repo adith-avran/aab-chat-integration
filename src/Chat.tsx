@@ -101,6 +101,8 @@ function Chat() {
   const typingTimeoutRef = useRef<number | null>(null);
   const isTypingRef = useRef(false);
 
+  const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
+
   const [initialMessage, setInitialMessage] = useState<LLMessage[]>([]);
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
@@ -355,6 +357,7 @@ function Chat() {
             messageContent: trimmed,
             countryCode: country_CODE,
             languageCode: language_CODE,
+            marketingConsent, // ← add this
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -711,16 +714,18 @@ function Chat() {
 
           if (eventData.content.failureReason) {
             if (eventData.content.failureReason === "No_Agent") {
+              if (chatState === "SFChat") {
+                console.log('ending chat')
+                closeSFSession();
+                setChatState("Ended");
+              }
               return {
                 id: eventData.messageId,
                 timestamp: eventData.transcriptedTimestamp,
                 name: "System",
                 author: "assistant",
                 content: [
-                  formatContactMessage(
-                    langFormatText.noAgentsAvailableMessage,
-                    contact,
-                  ),
+                  formatContactMessage(lang.noAgentsAvailableMessage, contact),
                 ],
               };
 
@@ -938,6 +943,9 @@ function Chat() {
                     sentMessage: true,
                   },
                 ]);
+
+                closeSFSession();
+                setChatState("Ended");
               });
             return;
           }
@@ -1323,7 +1331,13 @@ function Chat() {
       {showDisclaimer ? (
         <ChatDisclaimer
           disclaimerTextFields={langFormatText.disclaimerTextFields}
-          onAccept={() => {
+          // onAccept={() => {
+          //   setShowDisclaimer(false);
+          //   setInitialMessageSetup(Date.now());
+          // }}
+          onAccept={(consent) => {
+            // ← receive it
+            setMarketingConsent(consent);
             setShowDisclaimer(false);
             setInitialMessageSetup(Date.now());
           }}
@@ -1390,7 +1404,9 @@ function Chat() {
                     <img src={ABBLogo} />
                     <h2>{langFormatText.uiChatTitle}</h2>
                     <h2 style={{ color: "#00000073", fontWeight: 500 }}>
-                      ({import.meta.env.VITE_CHAT_APP_BRANCH})
+                      {import.meta.env.VITE_CHAT_APP_BRANCH !== "PROD"
+                        ? `(${import.meta.env.VITE_CHAT_APP_BRANCH})`
+                        : ""}
                     </h2>
                   </div>
                   <Modal
