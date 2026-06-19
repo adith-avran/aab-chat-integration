@@ -8,9 +8,10 @@ export default defineConfig(({ mode }) => {
     API_URL = "https://www.dev.gccchat.abb.com";
   } else if (env.VITE_CHAT_APP_BRANCH === "TEST") {
     API_URL = "https://www.test.gccchat.abb.com";
-  }
+  } else if (env.VITE_CHAT_APP_BRANCH === "PROD") {
+    API_URL = "https://www.gccchat.abb.com";
   // (env.VITE_CHAT_APP_BRANCH === "STAGE")
-  else {
+  } else {
     API_URL = "https://www.stage.gccchat.abb.com";
   }
   return {

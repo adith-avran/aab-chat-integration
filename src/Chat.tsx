@@ -6,6 +6,8 @@ import {
   PromptInput,
   SpaceBetween,
 } from "@cloudscape-design/components";
+
+import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
 import { v4 as uuid, v5 as uuidv5 } from "uuid";
 import Markdown from "react-markdown";
@@ -38,6 +40,22 @@ export type LLMessage = {
 };
 
 const NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`(.*?)`/g, "$1")
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^[-*+]\s+/gm, "• ")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu, "") // ✅ strip all emojis
+    .replace(/[\u2600-\u27FF]/gu, "") // ✅ strip misc symbols (✉️ 📞 etc)
+    .trim();
+}
 
 function timestampToDateString(timestamp: number) {
   const d = new Date(timestamp);
@@ -100,6 +118,8 @@ function Chat() {
   const [downloadingTranscript, setDownloadingTranscript] = useState(false);
   const typingTimeoutRef = useRef<number | null>(null);
   const isTypingRef = useRef(false);
+  const noAgentShownRef = useRef(false);
+  const wrapupCalledRef = useRef(false);
 
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
 
@@ -265,6 +285,9 @@ function Chat() {
   };
 
   async function handleNewChat() {
+    wrapupCalledRef.current = false; // ✅ reset for new session
+    noAgentShownRef.current = false; // ✅ reset for new session
+
     try {
       setLoadingNewChat(true);
       esRef.current?.close(); // ✅ Add this
@@ -503,18 +526,47 @@ function Chat() {
     setDownloadingTranscript(true);
     const allMessages = [...initialMessage, ...messages];
 
-    const lines = allMessages
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const now = new Date();
+    const downloadTimestamp = `${now.getFullYear()}-${pad(
+      now.getMonth() + 1,
+    )}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(
+      now.getMinutes(),
+    )}:${pad(now.getSeconds())}`;
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 40;
+    const usableWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const addPageIfNeeded = (neededHeight: number) => {
+      if (y + neededHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+    };
+
+    // Header
+    doc.setFillColor(220, 50, 50);
+    doc.rect(0, 0, pageWidth, 50, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("ABB Chat Transcript", margin, 32);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Downloaded: ${downloadTimestamp}`, pageWidth - margin, 32, {
+      align: "right",
+    });
+
+    y = 70;
+
+    allMessages
       .filter((msg) => !msg.loading)
-      .map((msg) => {
+      .forEach((msg) => {
         const time = new Date(msg.timestamp).toLocaleString();
-        // const author =
-        //   msg.author === "assistant"
-        //     ? lang.translateUserTitle.genai
-        //     : msg.author === "agent"
-        //     ? lang.translateUserTitle.agent
-        //     : msg.author === "user"
-        //     ? lang.translateUserTitle.user
-        //     : "System";
         const author =
           msg.author === "assistant"
             ? lang.translateUserTitle.genai
@@ -526,21 +578,69 @@ function Chat() {
             ? msg.name?.split(" ")[0] ?? lang.translateUserTitle.user
             : "System";
 
-        const content = Array.isArray(msg.content)
-          ? msg.content.join("\n")
-          : msg.content ?? "";
+        // const content = Array.isArray(msg.content)
+        //   ? msg.content.join("\n")
+        //   : msg.content ?? "";
+        const content = stripMarkdown(
+          Array.isArray(msg.content)
+            ? msg.content.join("\n")
+            : msg.content ?? "",
+        );
+        const isUser = msg.author === "user";
+        const isSystem = msg.author === "System";
 
-        return `[${time}] ${author}:\n${content}`;
-      })
-      .join("\n\n");
+        // Wrap content text
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        const wrappedContent = doc.splitTextToSize(content, usableWidth - 120);
+        const blockHeight = Math.max(36, wrappedContent.length * 14 + 20);
 
-    const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `chat-transcript-${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+        addPageIfNeeded(blockHeight);
+
+        // Row background
+        doc.setFillColor(
+          isSystem ? 245 : isUser ? 235 : 250,
+          isSystem ? 245 : isUser ? 240 : 245,
+          isSystem ? 245 : isUser ? 255 : 250,
+        );
+        doc.roundedRect(margin, y, usableWidth, blockHeight, 4, 4, "F");
+
+        // Timestamp
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.setFont("helvetica", "normal");
+        doc.text(time, margin + 8, y + 14);
+
+        // Author
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(
+          isSystem ? 120 : isUser ? 26 : 180,
+          isSystem ? 120 : isUser ? 115 : 30,
+          isSystem ? 120 : isUser ? 232 : 30,
+        );
+        doc.text(author, margin + 8, y + 26);
+
+        // Message content
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(40, 40, 40);
+        doc.text(wrappedContent, margin + 120, y + 14);
+
+        y += blockHeight + 6;
+      });
+
+    // Footer on last page
+    doc.setFontSize(8);
+    doc.setTextColor(180, 180, 180);
+    doc.text(
+      `End of transcript · ${downloadTimestamp}`,
+      pageWidth / 2,
+      pageHeight - 20,
+      { align: "center" },
+    );
+
+    doc.save(`chat-transcript-${Date.now()}.pdf`);
     setDownloadingTranscript(false);
   }
 
@@ -572,6 +672,9 @@ function Chat() {
 
   function closeSFSession() {
     if (chatState === "Ended") return;
+    if (wrapupCalledRef.current) return; // ✅ skip duplicate
+    wrapupCalledRef.current = true;
+
     setDisablePromptInput(true);
     fetch(import.meta.env.VITE_SF_API, {
       method: "POST",
@@ -715,10 +818,13 @@ function Chat() {
           if (eventData.content.failureReason) {
             if (eventData.content.failureReason === "No_Agent") {
               if (chatState === "SFChat") {
-                console.log('ending chat')
+                console.log("ending chat");
                 closeSFSession();
                 setChatState("Ended");
               }
+              if (noAgentShownRef.current) return; // ✅ skip duplicate
+              noAgentShownRef.current = true;
+
               return {
                 id: eventData.messageId,
                 timestamp: eventData.transcriptedTimestamp,
@@ -915,6 +1021,9 @@ function Chat() {
             // setChatState('Ended');
 
             // fetch(import.meta.env.VITE_SF_API, {
+            if (noAgentShownRef.current) return; // ✅ skip duplicate
+            noAgentShownRef.current = true;
+
             fetch(import.meta.env.VITE_SF_API, {
               method: "POST",
               credentials: "include",
@@ -1175,6 +1284,67 @@ function Chat() {
   //     });
   // }, []);
 
+  // useEffect(() => {
+  //   fetch(import.meta.env.VITE_LL_API, {
+  //     method: "POST",
+  //     credentials: "include",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({
+  //       intent: "SessionState",
+  //       langIsoCode: language_CODE,
+  //     }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then(async (data) => {
+  //       const lang = data.langData ?? langTextData["en"];
+  //       setLangFormatText(lang);
+  //       setResolvedLanguage(true);
+
+  //       if (data.state === "NOT_CONNECTED") {
+  //         setChatState("OpenStart");
+  //         return;
+  //       }
+
+  //       // Fetch contact details once upfront
+  //       let contact = null;
+  //       try {
+  //         const contactRes = await fetch(import.meta.env.VITE_SF_API, {
+  //           method: "POST",
+  //           credentials: "include",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({
+  //             intent: "ContactCenterDetails",
+  //             countryCode: country_CODE,
+  //           }),
+  //         });
+  //         contact = await contactRes.json();
+  //       } catch (e) {
+  //         console.error("Failed to fetch contact details", e);
+  //       }
+
+  //       let messages_too_add: LLMessage[] = [];
+  //       setChatState(data.state);
+  //       if (data.previous_ai_chats) {
+  //         messages_too_add = [
+  //           ...messages_too_add,
+  //           ...parse_fetched_ai_chats(data.previous_ai_chats, lang),
+  //         ];
+  //         if (data.salesforce_messages) {
+  //           subscribeToTunnel(data.salesforce_data);
+  //           messages_too_add = [
+  //             ...messages_too_add,
+  //             ...parse_fetched_sf_chats(
+  //               data.salesforce_messages,
+  //               lang,
+  //               contact,
+  //             ), // ← pass contact
+  //           ];
+  //         }
+  //       }
+  //       setMessages(messages_too_add);
+  //     });
+  // }, []);
+
   useEffect(() => {
     fetch(import.meta.env.VITE_LL_API, {
       method: "POST",
@@ -1196,45 +1366,61 @@ function Chat() {
           return;
         }
 
-        // Fetch contact details once upfront
-        let contact = null;
-        try {
-          const contactRes = await fetch(import.meta.env.VITE_SF_API, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              intent: "ContactCenterDetails",
-              countryCode: country_CODE,
-            }),
-          });
-          contact = await contactRes.json();
-        } catch (e) {
-          console.error("Failed to fetch contact details", e);
-        }
-
         let messages_too_add: LLMessage[] = [];
         setChatState(data.state);
+
         if (data.previous_ai_chats) {
           messages_too_add = [
             ...messages_too_add,
             ...parse_fetched_ai_chats(data.previous_ai_chats, lang),
           ];
+
           if (data.salesforce_messages) {
-            subscribeToTunnel(data.salesforce_data);
+            if (data.state === "SFChat") {
+              subscribeToTunnel(data.salesforce_data);
+            }
+
+            const hasRoutingFailure =
+              data.salesforce_messages.conversationEntries?.some(
+                (entry: any) =>
+                  entry.entryType ===
+                    CONVERSATION_CONSTANTS.EntryTypes.ROUTING_RESULT &&
+                  entry.entryPayload?.failureReason === "No_Agent",
+              );
+
+            let contact = null;
+            if (hasRoutingFailure) {
+              try {
+                const contactRes = await fetch(import.meta.env.VITE_SF_API, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    intent: "ContactCenterDetails",
+                    countryCode: country_CODE,
+                  }),
+                });
+                contact = await contactRes.json();
+              } catch (e) {
+                console.error("Failed to fetch contact details", e);
+              }
+            }
+
             messages_too_add = [
               ...messages_too_add,
               ...parse_fetched_sf_chats(
                 data.salesforce_messages,
                 lang,
                 contact,
-              ), // ← pass contact
+              ),
             ];
           }
         }
+
         setMessages(messages_too_add);
       });
   }, []);
+
   const lastEventIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
