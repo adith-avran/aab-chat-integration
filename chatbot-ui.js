@@ -30,6 +30,13 @@ function getPlaceholder(langIsoCode) {
   );
 }
 
+function loadConfigURL() {
+  const lang = window.CHAT_SESSION_LANGUAGE;
+  const country = window.CHAT_SESSION_COUNTRY;
+  return `https://www.gccchat.abb.com?lang=${lang}&country=${country}`;
+  // return `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
+}
+
 const injectedCSS = `
 #custom-chat-launcher {
     position: fixed;
@@ -141,12 +148,10 @@ const injectedCSS = `
 
 function injectChatInterface() {
   // const iframeUrl = `http://localhost:5173?lang=${lang}&country=${country}`;
-  // const lang = window.CHAT_SESSION_LANGUAGE;
+  const lang = window.CHAT_SESSION_LANGUAGE;
   // const country = window.CHAT_SESSION_COUNTRY;
   // const iframeUrl = `https://www.gccchat.abb.com?lang=${lang}&country=${country}`;
-  const lang = window.CHAT_SESSION_LANGUAGE || "en_US";
-  const country = window.CHAT_SESSION_COUNTRY || "US";
-  const iframeUrl = `https://www.stage.gccchat.abb.com?lang=${lang}&country=${country}`;
+  const iframeUrl = loadConfigURL();
   window.addEventListener(
     "message",
     function (event) {
@@ -211,6 +216,28 @@ function injectChatInterface() {
   //   });
 }
 
+function updateConfig() {
+  const iframe = document.getElementById("custom-chat-iframe");
+  iframe.style.visibility = "hidden";
+  iframe.style.opacity = "0";
+  iframe.src = loadConfigURL();
+
+  iframe.addEventListener(
+    "load",
+    () => {
+      iframe.style.visibility = "visible";
+      iframe.style.opacity = "1";
+    },
+    { once: true }
+  );
+  document.querySelector("#custom-chat-launcher span").innerText = getPlaceholder(window.CHAT_SESSION_LANGUAGE);
+  console.log('Updated Iframe options');
+  
+  // document.getElementById("custom-chat-modal").remove()
+  // document.getElementById("custom-chat-launcher").remove()
+  // injectChatInterface();
+}
+
 if (
   document.readyState === "complete" ||
   document.readyState === "interactive"
@@ -218,4 +245,5 @@ if (
   injectChatInterface();
 } else {
   window.addEventListener("load", injectChatInterface);
+  window.addEventListener("updateConfig", updateConfig);
 }

@@ -60,9 +60,8 @@ function stripMarkdown(text: string): string {
 function timestampToDateString(timestamp: number) {
   const d = new Date(timestamp);
   const pad = (n: any) => String(n).padStart(2, "0");
-  return `${pad(d.getHours() % 12 || 12)}:${pad(d.getMinutes())} ${
-    d.getHours() >= 12 ? "PM" : "AM"
-  }`;
+  return `${pad(d.getHours() % 12 || 12)}:${pad(d.getMinutes())} ${d.getHours() >= 12 ? "PM" : "AM"
+    }`;
 }
 
 function parseEventData(data: string) {
@@ -395,12 +394,12 @@ function Chat() {
           prev.map((msg) =>
             msg.id === assistantMessageId
               ? {
-                  ...msg,
-                  loading: false,
-                  content:
-                    responseText ??
-                    langFormatText.llmResponsePharsingErrorMessage,
-                }
+                ...msg,
+                loading: false,
+                content:
+                  responseText ??
+                  langFormatText.llmResponsePharsingErrorMessage,
+              }
               : msg,
           ),
         );
@@ -571,12 +570,12 @@ function Chat() {
           msg.author === "assistant"
             ? lang.translateUserTitle.genai
             : msg.author === "agent"
-            ? msg.name
-              ? `[${lang.translateUserTitle.agent}] ${msg.name.split(" ")[0]}`
-              : lang.translateUserTitle.agent
-            : msg.author === "user"
-            ? msg.name?.split(" ")[0] ?? lang.translateUserTitle.user
-            : "System";
+              ? msg.name
+                ? `[${lang.translateUserTitle.agent}] ${msg.name.split(" ")[0]}`
+                : lang.translateUserTitle.agent
+              : msg.author === "user"
+                ? msg.name?.split(" ")[0] ?? lang.translateUserTitle.user
+                : "System";
 
         // const content = Array.isArray(msg.content)
         //   ? msg.content.join("\n")
@@ -732,9 +731,9 @@ function Chat() {
         ) {
           if (
             eventData.messageType ===
-              CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
+            CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
             eventData.content.staticContent?.formatType ===
-              CONVERSATION_CONSTANTS.FormatTypes.TEXT
+            CONVERSATION_CONSTANTS.FormatTypes.TEXT
           ) {
             // console.log("adding to list");
 
@@ -919,9 +918,9 @@ function Chat() {
 
         if (
           eventData.messageType ===
-            CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
+          CONVERSATION_CONSTANTS.MessageTypes.STATIC_CONTENT_MESSAGE &&
           eventData.content.staticContent?.formatType ===
-            CONVERSATION_CONSTANTS.FormatTypes.TEXT
+          CONVERSATION_CONSTANTS.FormatTypes.TEXT
         ) {
           // console.log("adding to list");
 
@@ -1384,7 +1383,7 @@ function Chat() {
               data.salesforce_messages.conversationEntries?.some(
                 (entry: any) =>
                   entry.entryType ===
-                    CONVERSATION_CONSTANTS.EntryTypes.ROUTING_RESULT &&
+                  CONVERSATION_CONSTANTS.EntryTypes.ROUTING_RESULT &&
                   entry.entryPayload?.failureReason === "No_Agent",
               );
 
@@ -1703,6 +1702,7 @@ function Chat() {
                       disabled={!chatState || disablePromptInput}
                       maxRows={8}
                       minRows={3}
+                      nativeTextareaAttributes={{ dir: "auto" }}
                     />
                   )}
                 </SpaceBetween>
@@ -1751,11 +1751,11 @@ function Chat() {
                             className="chat-message"
                             alignItems={
                               message.author === "assistant" ||
-                              message.author === "agent"
+                                message.author === "agent"
                                 ? "start"
                                 : message.author === "user"
-                                ? "end"
-                                : "center"
+                                  ? "end"
+                                  : "center"
                             }
                           >
                             {message.author === "System" ? (
@@ -1763,23 +1763,23 @@ function Chat() {
                                 <Box color="text-body-secondary">
                                   {Array.isArray(message.content)
                                     ? message.content.map((i: string) => (
-                                        <p>
-                                          <small
-                                            style={{
-                                              whiteSpace: "pre-wrap",
-                                              textAlign: "center",
-                                            }}
-                                          >
-                                            {i}{" "}
-                                            {message.name ===
+                                      <p>
+                                        <small
+                                          style={{
+                                            whiteSpace: "pre-wrap",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {i}{" "}
+                                          {message.name ===
                                             "Automated Process"
-                                              ? ""
-                                              : timestampToDateString(
-                                                  message.timestamp,
-                                                )}
-                                          </small>
-                                        </p>
-                                      ))
+                                            ? ""
+                                            : timestampToDateString(
+                                              message.timestamp,
+                                            )}
+                                        </small>
+                                      </p>
+                                    ))
                                     : message.content}
                                 </Box>
                               </SpaceBetween>
@@ -1792,7 +1792,7 @@ function Chat() {
                                       author={
                                         message.name ||
                                         langFormatText.translateUserTitle[
-                                          message.author
+                                        message.author
                                         ]
                                       }
                                       role={message.author}
@@ -1804,7 +1804,7 @@ function Chat() {
                                   ariaLabel={`message-${message.author}`}
                                   type={
                                     message.author === "assistant" ||
-                                    message.author === "agent"
+                                      message.author === "agent"
                                       ? "incoming"
                                       : "outgoing"
                                   }
@@ -1821,7 +1821,9 @@ function Chat() {
                                         gap: 10,
                                         flexDirection: "column",
                                         whiteSpace: "pre-wrap",
+
                                       }}
+                                      dir="auto"
                                     >
                                       <Markdown
                                         components={{
@@ -1975,9 +1977,8 @@ function MessageTimestamp({
   //   date.getMinutes(),
   // )} GMT${sign}${hours}:${minutes}`;
 
-  const time = `${pad(date.getHours() % 12 || 12)}:${pad(date.getMinutes())} ${
-    date.getHours() >= 12 ? "PM" : "AM"
-  }`;
+  const time = `${pad(date.getHours() % 12 || 12)}:${pad(date.getMinutes())} ${date.getHours() >= 12 ? "PM" : "AM"
+    }`;
 
   return (
     <Box color="text-body-secondary">
